@@ -1,18 +1,17 @@
-// frontend/pages/_app.js
-import '../styles/globals.css';  // ✅ FIXED path
-import { ThirdwebProvider } from '@thirdweb-dev/react';
-import { ChainId } from '@thirdweb-dev/sdk';
-import Head from 'next/head';
+// /frontend/pages/_app.js
 
-const activeChain = ChainId.BASE;
+import { ThirdwebProvider, metamaskWallet } from "@thirdweb-dev/react";
+import "../styles/globals.css"; // make sure this exists or comment it out
+
+const activeChain = "base"; // Base Mainnet
 
 function MyApp({ Component, pageProps }) {
   return (
-    <ThirdwebProvider desiredChainId={activeChain}>
-      <Head>
-        <title>Farcaster Lottery</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </Head>
+    <ThirdwebProvider
+      activeChain={activeChain}
+      clientId="your-thirdweb-client-id" // replace this with yours
+      supportedWallets={[metamaskWallet()]}
+    >
       <Component {...pageProps} />
     </ThirdwebProvider>
   );
