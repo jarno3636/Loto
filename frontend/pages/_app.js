@@ -1,5 +1,5 @@
 // frontend/pages/_app.js
-import '@/styles/globals.css';
+import '../styles/globals.css';  // ✅ FIXED path
 import { ThirdwebProvider } from '@thirdweb-dev/react';
 import { ChainId } from '@thirdweb-dev/sdk';
 import Head from 'next/head';
