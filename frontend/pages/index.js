@@ -1,105 +1,76 @@
-// /frontend/pages/index.js
-
-import { useEffect, useState } from "react";
-import { useAddress, useMetamask, ThirdwebProvider } from "@thirdweb-dev/react";
-import { ethers } from "ethers";
+import { useContract, useContractWrite, ConnectWallet } from "@thirdweb-dev/react";
+import { useState } from "react";
 import lotteryAbi from "../constants/LotteryABI.json";
 
-const contractAddress = "0x3dE6dFb9bD8e76a23C3E1aEc5E67007f58cD3A5e";
-
 export default function Home() {
-  const connectWithMetamask = useMetamask();
-  const address = useAddress();
-
-  const [provider, setProvider] = useState(null);
-  const [contract, setContract] = useState(null);
-  const [poolId, setPoolId] = useState("");
   const [tokenAddress, setTokenAddress] = useState("");
-  const [poolType, setPoolType] = useState("small");
+  const [poolType, setPoolType] = useState(0); // 0 = Small, 1 = Medium, 2 = Large
+  const [poolId, setPoolId] = useState("");
 
-  useEffect(() => {
-    if (window.ethereum) {
-      const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-      setProvider(web3Provider);
-      const signer = web3Provider.getSigner();
-      const lotteryContract = new ethers.Contract(contractAddress, lotteryAbi, signer);
-      setContract(lotteryContract);
-    }
-  }, []);
+  const contractAddress = "0x3dE6dFb9bD8e76a23C3E1aEc5E67007f58cD3A5e";
 
-  const createPool = async () => {
+  const { contract } = useContract(contractAddress, lotteryAbi);
+  const { mutateAsync: createPool } = useContractWrite(contract, "createPool");
+  const { mutateAsync: joinPool } = useContractWrite(contract, "joinPool");
+  const { mutateAsync: claimPrize } = useContractWrite(contract, "claimPrize");
+
+  const handleCreatePool = async () => {
     try {
-      const type = poolType === "small" ? 0 : poolType === "medium" ? 1 : 2;
-      const tx = await contract.createPool(tokenAddress, type, {
-        value: ethers.utils.parseEther("0.01"),
-      });
-      await tx.wait();
-      alert("Pool created!");
+      const tx = await createPool({ args: [tokenAddress, poolType] });
+      console.log("Pool created:", tx);
     } catch (err) {
-      console.error(err);
-      alert("Failed to create pool.");
+      console.error("Error creating pool:", err);
     }
   };
 
-  const joinPool = async () => {
+  const handleJoinPool = async () => {
     try {
-      const tx = await contract.joinPool(poolId, {
-        value: ethers.utils.parseEther("0.01"),
-      });
-      await tx.wait();
-      alert("Joined pool!");
+      const tx = await joinPool({ args: [poolId] });
+      console.log("Joined pool:", tx);
     } catch (err) {
-      console.error(err);
-      alert("Failed to join pool.");
+      console.error("Error joining pool:", err);
     }
   };
 
-  const claimPrize = async () => {
+  const handleClaimPrize = async () => {
     try {
-      const tx = await contract.claimPrize(poolId);
-      await tx.wait();
-      alert("Prize claimed!");
+      const tx = await claimPrize({ args: [poolId] });
+      console.log("Claimed prize:", tx);
     } catch (err) {
-      console.error(err);
-      alert("Claim failed.");
+      console.error("Error claiming prize:", err);
     }
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      {!address && (
-        <button onClick={connectWithMetamask}>Connect Wallet</button>
-      )}
+    <div style={{ padding: 24 }}>
+      <h1>🎟️ Farcaster Lottery</h1>
+      <ConnectWallet />
 
-      {address && (
-        <div>
-          <h2>Welcome, {address}</h2>
+      <hr />
 
-          <h3>Create Pool</h3>
-          <input
-            type="text"
-            placeholder="Token Address"
-            value={tokenAddress}
-            onChange={(e) => setTokenAddress(e.target.value)}
-          />
-          <select onChange={(e) => setPoolType(e.target.value)}>
-            <option value="small">Small</option>
-            <option value="medium">Medium</option>
-            <option value="big">Big</option>
-          </select>
-          <button onClick={createPool}>Create</button>
+      <h2>Create a Pool</h2>
+      <input
+        placeholder="Token Address"
+        value={tokenAddress}
+        onChange={(e) => setTokenAddress(e.target.value)}
+      />
+      <select value={poolType} onChange={(e) => setPoolType(parseInt(e.target.value))}>
+        <option value={0}>Small Pool</option>
+        <option value={1}>Medium Pool</option>
+        <option value={2}>Large Pool</option>
+      </select>
+      <button onClick={handleCreatePool}>Create Pool</button>
 
-          <h3>Join or Claim</h3>
-          <input
-            type="text"
-            placeholder="Pool ID"
-            value={poolId}
-            onChange={(e) => setPoolId(e.target.value)}
-          />
-          <button onClick={joinPool}>Join Pool</button>
-          <button onClick={claimPrize}>Claim Prize</button>
-        </div>
-      )}
+      <hr />
+
+      <h2>Join or Claim</h2>
+      <input
+        placeholder="Pool ID"
+        value={poolId}
+        onChange={(e) => setPoolId(e.target.value)}
+      />
+      <button onClick={handleJoinPool}>Join Pool</button>
+      <button onClick={handleClaimPrize}>Claim Prize</button>
     </div>
   );
 }
