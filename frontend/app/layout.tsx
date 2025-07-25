@@ -1,7 +1,4 @@
 // app/layout.tsx
-<meta name="fc:frame" content="vNext" />
-<meta name="fc:frame:image" content="https://loto-gamma.vercel.app/meta-preview.png" />
-<meta name="fc:frame:post_url" content="https://loto-gamma.vercel.app/api/frame" />
 import './globals.css';
 import { Metadata } from 'next';
 import Footer from '@/components/Footer';
@@ -12,7 +9,8 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://loto-gamma.vercel.app'),
   openGraph: {
     title: 'Loto | Win from Decentralized Lottery Pools',
-    description: 'Create or join community-powered lottery pools with your favorite tokens like $TOBY, $PATIENCE, $TABOSHI, and more.',
+    description:
+      'Create or join community-powered lottery pools with your favorite tokens like $TOBY, $PATIENCE, $TABOSHI, and more.',
     images: [
       {
         url: '/meta-preview.png',
@@ -30,14 +28,18 @@ export const metadata: Metadata = {
     images: ['/meta-preview.png'],
   },
   icons: {
-    icon: '/favicon.PNG', // Note: Case-sensitive, ensure the file is uploaded as 'favicon.PNG'
+    icon: '/favicon.PNG', // Respect case sensitivity
+  },
+  other: {
+    'fc:frame': 'vNext',
+    'fc:frame:image': 'https://loto-gamma.vercel.app/meta-preview.png',
+    'fc:frame:post_url': 'https://loto-gamma.vercel.app/api/frame',
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head />
       <body className="bg-slate-950 text-white font-sans min-h-screen flex flex-col">
         <main className="flex-grow">{children}</main>
         <Footer />
