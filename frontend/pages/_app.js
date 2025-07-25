@@ -1,16 +1,17 @@
-// /frontend/pages/_app.js
-
-import { ThirdwebProvider, metamaskWallet } from "@thirdweb-dev/react";
-import "../styles/globals.css"; // make sure this exists or comment it out
-
-const activeChain = "base"; // Base Mainnet
+import "../styles/globals.css";
+import { ThirdwebProvider, metamaskWallet, coinbaseWallet, walletConnect } from "@thirdweb-dev/react";
+import { Base } from "@thirdweb-dev/chains";
 
 function MyApp({ Component, pageProps }) {
   return (
     <ThirdwebProvider
-      activeChain={activeChain}
-      clientId="your-thirdweb-client-id" // replace this with yours
-      supportedWallets={[metamaskWallet()]}
+      activeChain={Base}
+      clientId="67f8fc061c57545f024e949f28d94fc3"
+      supportedWallets={[
+        metamaskWallet(),
+        coinbaseWallet(),
+        walletConnect()
+      ]}
     >
       <Component {...pageProps} />
     </ThirdwebProvider>
