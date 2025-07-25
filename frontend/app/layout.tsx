@@ -1,6 +1,8 @@
+// app/layout.tsx
+
 import './globals.css';
 import { Metadata } from 'next';
-import { AnimatePresence, motion } from 'framer-motion';
+import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: 'Loto | Decentralized Lottery on Base',
@@ -9,7 +11,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Loto | Win from Decentralized Lottery Pools',
     description: 'Create or join community-powered lottery pools with your favorite tokens like $TOBY, $PATIENCE, $TABOSHI, and more.',
-    images: [{ url: '/meta-preview.png', width: 1200, height: 630, alt: 'Loto decentralized lottery app' }],
+    images: [
+      {
+        url: '/meta-preview.png',
+        width: 1200,
+        height: 630,
+        alt: 'Loto decentralized lottery app',
+      },
+    ],
     type: 'website',
   },
   twitter: {
@@ -19,25 +28,17 @@ export const metadata: Metadata = {
     images: ['/meta-preview.png'],
   },
   icons: {
-    icon: '/favicon.PNG',
+    icon: '/favicon.PNG', // Note: Case-sensitive, ensure the file is uploaded as 'favicon.PNG'
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-slate-950 text-white font-sans">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key="page"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.4 }}
-          >
-            {children}
-          </motion.div>
-        </AnimatePresence>
+      <head />
+      <body className="bg-slate-950 text-white font-sans min-h-screen flex flex-col">
+        <main className="flex-grow">{children}</main>
+        <Footer />
       </body>
     </html>
   );
