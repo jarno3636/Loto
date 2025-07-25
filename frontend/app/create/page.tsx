@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useWalletClient, useChain } from 'wagmi';
 import { ethers } from 'ethers';
 import { getLotteryContract } from '@/lib/lottery';
 import { tokenList, TokenInfo } from '@/lib/tokenList';
 import { fetchUsdPrice } from '@/lib/price';
-import { useRouter } from 'next/navigation';
-import ToastAlert from "@/components/ToastAlert";
-import ERC20_ABI from '@/lib/erc20abi.json'; // Ensure this file exists
+import QRCode from 'react-qr-code';
+import ToastAlert from '@/components/ToastAlert';
 
 export default function CreatePoolPage() {
   const { data: walletClient } = useWalletClient();
@@ -19,9 +19,11 @@ export default function CreatePoolPage() {
   const [entryAmount, setEntryAmount] = useState('');
   const [usdValue, setUsdValue] = useState<number | null>(null);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [showQR, setShowQR] = useState(false);
+
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
   useEffect(() => {
     const fetchPrice = async () => {
@@ -74,35 +76,32 @@ export default function CreatePoolPage() {
     }
 
     try {
-      setLoading(true);
       const contract = getLotteryContract(walletClient);
       const tokenContract = new ethers.Contract(
         selectedToken.address,
-        ERC20_ABI,
+        ['function approve(address spender, uint256 amount) public returns (bool)'],
         walletClient
       );
-
       const parsedAmount = ethers.utils.parseUnits(entryAmount, selectedToken.decimals);
-      const allowance = await tokenContract.allowance(walletClient.account.address, contract.address);
 
-      if (allowance.lt(parsedAmount)) {
-        const tx = await tokenContract.approve(contract.address, parsedAmount);
-        await tx.wait();
-      }
-
+      await tokenContract.approve(contract.address, parsedAmount);
       const tx = await contract.createPool(selectedToken.address, parsedAmount);
       await tx.wait();
 
       setToastMsg("Pool created successfully!");
       setToastType("success");
-      setTimeout(() => router.push('/'), 3000);
+      router.push('/');
     } catch (err: any) {
-      console.error("Error creating pool:", err);
+      console.error("Pool creation error:", err);
       setToastMsg("Something went wrong. Please try again.");
       setToastType("error");
-    } finally {
-      setLoading(false);
     }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setToastMsg('Copied page URL to clipboard!');
+    setToastType('success');
   };
 
   return (
@@ -112,7 +111,7 @@ export default function CreatePoolPage() {
       <div className="mb-4">
         <label className="block mb-2">Select Token</label>
         <select
-          className="w-full p-2 bg-slate-800 text-white rounded"
+          className="w-full p-2 bg-slate-800 text-white rounded transition hover:ring-2 hover:ring-violet-500"
           onChange={(e) =>
             setSelectedToken(tokenList.find((t) => t.address === e.target.value) || null)
           }
@@ -139,7 +138,7 @@ export default function CreatePoolPage() {
         <input
           type="number"
           step="any"
-          className="w-full p-2 bg-slate-800 text-white rounded"
+          className="w-full p-2 bg-slate-800 text-white rounded transition hover:ring-2 hover:ring-violet-500"
           value={entryAmount}
           onChange={(e) => setEntryAmount(e.target.value)}
         />
@@ -154,16 +153,32 @@ export default function CreatePoolPage() {
 
       <button
         title="Click to create a new pool with the above settings."
-        className={`w-full text-white font-semibold py-2 rounded ${
-          error || !selectedToken
-            ? 'bg-gray-500 cursor-not-allowed'
-            : 'bg-violet-600 hover:bg-violet-700'
-        }`}
+        className="w-full bg-violet-600 hover:bg-violet-700 transition-all duration-200 text-white font-semibold py-2 rounded shadow-md hover:scale-[1.02]"
         onClick={handleCreate}
-        disabled={!selectedToken || !!error || loading}
+        disabled={!selectedToken || !!error}
       >
-        {loading ? 'Creating Pool...' : 'Create Pool'}
+        🎯 Create Pool
       </button>
+
+      <div className="mt-6 flex flex-col gap-2 items-start">
+        <button
+          onClick={handleCopyLink}
+          className="text-sm underline text-violet-400 hover:text-violet-300"
+        >
+          🔗 Copy Share Link
+        </button>
+        <button
+          onClick={() => setShowQR(!showQR)}
+          className="text-sm underline text-violet-400 hover:text-violet-300"
+        >
+          📱 {showQR ? 'Hide QR Code' : 'Show QR Code'}
+        </button>
+        {showQR && (
+          <div className="mt-4 p-4 bg-white rounded">
+            <QRCode value={shareUrl} size={128} />
+          </div>
+        )}
+      </div>
 
       {toastMsg && (
         <ToastAlert type={toastType} message={toastMsg} onClose={() => setToastMsg('')} />
