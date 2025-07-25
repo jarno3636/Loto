@@ -1,4 +1,3 @@
-// app/layout.tsx
 import './globals.css';
 import { Metadata } from 'next';
 
@@ -25,14 +24,14 @@ export const metadata: Metadata = {
     description: 'Create and win lottery pools using Base tokens.',
     images: ['/meta-preview.png'],
   },
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <link rel="icon" href="/favicon.PNG" />
-      </head>
       <body className="bg-slate-950 text-white font-sans">{children}</body>
     </html>
   );
