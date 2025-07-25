@@ -1,5 +1,7 @@
 // app/layout.tsx
-
+<meta name="fc:frame" content="vNext" />
+<meta name="fc:frame:image" content="https://loto-gamma.vercel.app/meta-preview.png" />
+<meta name="fc:frame:post_url" content="https://loto-gamma.vercel.app/api/frame" />
 import './globals.css';
 import { Metadata } from 'next';
 import Footer from '@/components/Footer';
