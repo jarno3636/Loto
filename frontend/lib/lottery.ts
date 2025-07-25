@@ -1,13 +1,14 @@
-import { ethers } from 'ethers';
-import LotteryABI from '../LotteryABI.json';
+import { getContract } from 'wagmi/actions';
+import { abi as LotteryABI } from '../abi/LotteryABI.json';
+import { WalletClient } from 'viem';
+import { publicClient } from '@/lib/wallet'; // If you have a separate client setup
 
-export const LOTTERY_CONTRACT_ADDRESS = '0x828A55DBfdbC97519aebb8F49aeAdF3084eB6dEa'; // Base Mainnet
-export const SUPPORTED_NETWORKS = ['8453']; // Base chain ID
+const CONTRACT_ADDRESS = '0xYourLotteryContractAddressHere'; // Replace with actual address
 
-export function getLotteryContract(providerOrSigner: ethers.Provider | ethers.Signer) {
-  return new ethers.Contract(LOTTERY_CONTRACT_ADDRESS, LotteryABI, providerOrSigner);
-}
-
-export function isSupportedNetwork(chainId: string) {
-  return SUPPORTED_NETWORKS.includes(chainId);
+export function getLotteryContract(walletClient: WalletClient) {
+  return getContract({
+    address: CONTRACT_ADDRESS as `0x${string}`,
+    abi: LotteryABI,
+    walletClient,
+  });
 }
