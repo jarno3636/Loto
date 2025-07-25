@@ -1,30 +1,27 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { useWalletClient, useChainId } from 'wagmi';
+import { useWalletClient, useChain } from 'wagmi';
 import { ethers } from 'ethers';
-import { useRouter } from 'next/navigation';
-import ToastAlert from "@/components/ToastAlert";
 import { getLotteryContract } from '@/lib/lottery';
 import { tokenList, TokenInfo } from '@/lib/tokenList';
 import { fetchUsdPrice } from '@/lib/price';
-
-const ERC20_ABI = [
-  'function approve(address spender, uint256 amount) public returns (bool)',
-  'function allowance(address owner, address spender) public view returns (uint256)',
-];
+import { useRouter } from 'next/navigation';
+import ToastAlert from "@/components/ToastAlert";
+import ERC20_ABI from '@/lib/erc20abi.json'; // Ensure this file exists
 
 export default function CreatePoolPage() {
   const { data: walletClient } = useWalletClient();
-  const chainId = useChainId();
+  const { chain } = useChain();
   const router = useRouter();
 
   const [selectedToken, setSelectedToken] = useState<TokenInfo | null>(null);
   const [entryAmount, setEntryAmount] = useState('');
   const [usdValue, setUsdValue] = useState<number | null>(null);
   const [error, setError] = useState('');
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [toastType, setToastType] = useState<"error" | "success" | "info">("info");
+  const [loading, setLoading] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   useEffect(() => {
     const fetchPrice = async () => {
@@ -70,28 +67,24 @@ export default function CreatePoolPage() {
       return;
     }
 
-    if (usdValue && (usdValue < 1 || usdValue > 50)) {
-      setToastMsg("Entry amount must be between $1 and $50.");
-      setToastType("error");
-      return;
-    }
-
-    if (chainId !== 8453) {
+    if (!chain || chain.id !== 8453) {
       setToastMsg("Please connect to Base Mainnet.");
       setToastType("error");
       return;
     }
 
     try {
+      setLoading(true);
       const contract = getLotteryContract(walletClient);
       const tokenContract = new ethers.Contract(
         selectedToken.address,
         ERC20_ABI,
         walletClient
       );
-      const parsedAmount = ethers.utils.parseUnits(entryAmount, selectedToken.decimals);
 
+      const parsedAmount = ethers.utils.parseUnits(entryAmount, selectedToken.decimals);
       const allowance = await tokenContract.allowance(walletClient.account.address, contract.address);
+
       if (allowance.lt(parsedAmount)) {
         const tx = await tokenContract.approve(contract.address, parsedAmount);
         await tx.wait();
@@ -102,11 +95,13 @@ export default function CreatePoolPage() {
 
       setToastMsg("Pool created successfully!");
       setToastType("success");
-      setTimeout(() => router.push('/'), 2000);
-    } catch (err) {
+      setTimeout(() => router.push('/'), 3000);
+    } catch (err: any) {
       console.error("Error creating pool:", err);
       setToastMsg("Something went wrong. Please try again.");
       setToastType("error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -138,7 +133,9 @@ export default function CreatePoolPage() {
       </div>
 
       <div className="mb-4">
-        <label className="block mb-2">Entry Amount ({selectedToken?.symbol || 'Token'})</label>
+        <label className="block mb-2">
+          Entry Amount ({selectedToken?.symbol || 'Token'})
+        </label>
         <input
           type="number"
           step="any"
@@ -155,15 +152,22 @@ export default function CreatePoolPage() {
 
       {error && <p className="text-red-400 mb-4">{error}</p>}
 
-      <button title="Click to create a new pool with the above settings."
-        className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2 rounded"
+      <button
+        title="Click to create a new pool with the above settings."
+        className={`w-full text-white font-semibold py-2 rounded ${
+          error || !selectedToken
+            ? 'bg-gray-500 cursor-not-allowed'
+            : 'bg-violet-600 hover:bg-violet-700'
+        }`}
         onClick={handleCreate}
-        disabled={!selectedToken || !!error}
+        disabled={!selectedToken || !!error || loading}
       >
-        Create Pool
+        {loading ? 'Creating Pool...' : 'Create Pool'}
       </button>
 
-      {toastMsg && <ToastAlert message={toastMsg} type={toastType} />}
+      {toastMsg && (
+        <ToastAlert type={toastType} message={toastMsg} onClose={() => setToastMsg('')} />
+      )}
     </main>
   );
 }
