@@ -1,19 +1,15 @@
 // app/not-found.tsx
-'use client';
-
-import Link from 'next/link';
-
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white text-center px-6">
-      <h1 className="text-5xl font-bold mb-4">404</h1>
-      <p className="text-xl mb-6">Oops! This page doesn't exist.</p>
-      <Link
+    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-white p-8">
+      <h1 className="text-4xl font-bold mb-4">404 - Not Found</h1>
+      <p className="text-slate-400 mb-6">The page you’re looking for doesn’t exist.</p>
+      <a
         href="/"
-        className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-md transition"
+        className="bg-white text-slate-950 px-6 py-2 rounded-md font-semibold hover:bg-slate-200 transition"
       >
-        Go Back Home
-      </Link>
+        Go back home
+      </a>
     </div>
   );
 }
