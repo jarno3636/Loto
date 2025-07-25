@@ -1,16 +1,12 @@
 
-import Hero from "../components/Hero";
-import PoolCard from "../components/PoolCard";
+import Link from 'next/link';
 
-export default function HomePage() {
+export default function Home() {
   return (
-    <div className="px-6 py-10 space-y-10">
-      <Hero />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[0, 1, 2].map((id) => (
-          <PoolCard key={id} poolId={id} />
-        ))}
-      </div>
-    </div>
+    <main className="p-4 text-center">
+      <h1 className="text-4xl font-bold text-white mb-4">Welcome to Loto</h1>
+      <p className="text-lg text-gray-300 mb-6">Join or create decentralized lottery pools with your favorite Base tokens.</p>
+      <Link href="/create" className="bg-violet-600 px-4 py-2 rounded text-white hover:bg-violet-500 transition">Create a Pool</Link>
+    </main>
   );
 }
