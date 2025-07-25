@@ -1,16 +1,13 @@
 'use client';
 
-import { motion } from "framer-motion";
 import { useState, useEffect } from 'react';
 import { useWalletClient, useChainId } from 'wagmi';
-import { useRouter } from 'next/navigation';
 import { ethers } from 'ethers';
-import FadeWrapper from '@/components/FadeWrapper';
+import { useRouter } from 'next/navigation';
 import { getLotteryContract } from '@/lib/lottery';
 import { tokenList, TokenInfo } from '@/lib/tokenList';
 import { fetchUsdPrice } from '@/lib/price';
-import ToastAlert from '@/components/ToastAlert';
-import { ERC20_ABI } from '@/lib/constants';
+import { motion } from 'framer-motion';
 
 export default function CreatePoolPage() {
   const { data: walletClient } = useWalletClient();
@@ -20,31 +17,52 @@ export default function CreatePoolPage() {
   const [selectedToken, setSelectedToken] = useState<TokenInfo | null>(null);
   const [entryAmount, setEntryAmount] = useState('');
   const [usdValue, setUsdValue] = useState<number | null>(null);
-  const [toastMsg, setToastMsg] = useState('');
-  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     const fetchPrice = async () => {
       if (selectedToken && entryAmount) {
         const price = await fetchUsdPrice(selectedToken.symbol);
         if (price) {
-          const value = parseFloat(entryAmount) * price;
-          setUsdValue(value);
+          const usd = parseFloat(entryAmount) * price;
+          setUsdValue(usd);
+          if (usd < 1) {
+            setError('Minimum entry is $1.');
+          } else if (usd > 50) {
+            setError('Maximum entry for Medium Pool is $50.');
+          } else {
+            setError('');
+          }
         } else {
-          setToastMsg('Failed to fetch token price.');
-          setToastType('error');
+          setError('Failed to fetch token price.');
         }
       } else {
         setUsdValue(null);
+        setError('');
       }
     };
     fetchPrice();
   }, [selectedToken, entryAmount]);
 
   const handleCreate = async () => {
-    if (!walletClient || !selectedToken || !entryAmount || chainId !== 8453) {
-      setToastMsg('Check wallet, token, entry, or network.');
-      setToastType('error');
+    if (!walletClient) {
+      setError('Connect your wallet to create a pool.');
+      return;
+    }
+
+    if (!selectedToken) {
+      setError('Please select a token.');
+      return;
+    }
+
+    if (!entryAmount || isNaN(Number(entryAmount)) || Number(entryAmount) <= 0) {
+      setError('Enter a valid token amount.');
+      return;
+    }
+
+    if (chainId !== 8453) {
+      setError('Please switch to Base Mainnet.');
       return;
     }
 
@@ -52,76 +70,87 @@ export default function CreatePoolPage() {
       const contract = getLotteryContract(walletClient);
       const parsedAmount = ethers.utils.parseUnits(entryAmount, selectedToken.decimals);
 
-      const tokenContract = new ethers.Contract(selectedToken.address, ERC20_ABI, walletClient);
-      const allowance = await tokenContract.allowance(walletClient.account.address, contract.address);
+      const tokenContract = new ethers.Contract(
+        selectedToken.address,
+        ['function approve(address spender, uint256 amount) public returns (bool)'],
+        walletClient
+      );
 
-      if (allowance.lt(parsedAmount)) {
-        const tx = await tokenContract.approve(contract.address, parsedAmount);
-        await tx.wait();
-      }
+      const approveTx = await tokenContract.approve(contract.address, parsedAmount);
+      await approveTx.wait();
 
       const tx = await contract.createPool(selectedToken.address, parsedAmount);
       await tx.wait();
 
-      setToastMsg('Pool created successfully!');
-      setToastType('success');
+      setSuccess('Pool created successfully!');
       router.push('/');
-    } catch (err) {
-      console.error(err);
-      setToastMsg('Pool creation failed.');
-      setToastType('error');
+    } catch (err: any) {
+      setError(err.message || 'Transaction failed. Please try again.');
     }
   };
 
   return (
-    <FadeWrapper>
-      <main className="max-w-xl mx-auto p-6 text-white">
-        <h1 className="text-3xl font-bold mb-6">Create a Lottery Pool</h1>
+    <motion.main
+      className="max-w-xl mx-auto p-6 text-white"
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <h1 className="text-3xl font-bold mb-6">🎉 Create a Lottery Pool</h1>
 
-        <div className="mb-4">
-          <label className="block mb-2">Select Token</label>
-          <select
-            className="w-full p-2 bg-slate-800 text-white rounded"
-            onChange={(e) =>
-              setSelectedToken(tokenList.find((t) => t.address === e.target.value) || null)
-            }
-          >
-            <option value="">-- Choose Token --</option>
-            {tokenList.map((token) => (
-              <option key={token.address} value={token.address}>
-                {token.symbol}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="mb-4">
-          <label className="block mb-2">Entry Amount ({selectedToken?.symbol || 'Token'})</label>
-          <input
-            type="number"
-            step="any"
-            className="w-full p-2 bg-slate-800 text-white rounded"
-            value={entryAmount}
-            onChange={(e) => setEntryAmount(e.target.value)}
-          />
-          {usdValue && (
-            <p className="text-sm text-gray-400 mt-1">≈ ${usdValue.toFixed(2)} USD</p>
-          )}
-        </div>
-
-        <motion.button
-          title="Click to create a new pool with the above settings."
-          className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2 rounded"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleCreate}
-          disabled={!selectedToken || !!error}
+      <div className="mb-4">
+        <label className="block mb-2">Select Token</label>
+        <select
+          className="w-full p-2 bg-slate-800 text-white rounded"
+          onChange={(e) =>
+            setSelectedToken(tokenList.find((t) => t.address === e.target.value) || null)
+          }
         >
-          Create Pool
-        </motion.button>
+          <option value="">-- Choose Token --</option>
+          {tokenList.map((token) => (
+            <option key={token.address} value={token.address}>
+              {token.symbol}
+            </option>
+          ))}
+        </select>
+        {selectedToken && (
+          <div className="flex items-center mt-2 gap-2">
+            <img src={selectedToken.logoURI} alt={selectedToken.symbol} className="h-6 w-6" />
+            <span>{selectedToken.name}</span>
+          </div>
+        )}
+      </div>
 
-        {toastMsg && <ToastAlert message={toastMsg} type={toastType} />}
-      </main>
-    </FadeWrapper>
+      <div className="mb-4">
+        <label className="block mb-2">
+          Entry Amount {selectedToken ? `(${selectedToken.symbol})` : ''}
+        </label>
+        <input
+          type="number"
+          step="any"
+          value={entryAmount}
+          onChange={(e) => setEntryAmount(e.target.value)}
+          className="w-full p-2 bg-slate-800 text-white rounded"
+        />
+        {usdValue && (
+          <p className="text-sm text-gray-400 mt-1">
+            ≈ ${usdValue.toFixed(2)} USD
+          </p>
+        )}
+      </div>
+
+      {error && <p className="text-red-400 mb-4">{error}</p>}
+      {success && <p className="text-green-400 mb-4">{success}</p>}
+
+      <motion.button
+        title="Click to create a new pool with the above settings."
+        className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2 rounded transition-colors"
+        whileTap={{ scale: 0.97 }}
+        onClick={handleCreate}
+        disabled={!selectedToken || !!error}
+      >
+        Create Pool
+      </motion.button>
+    </motion.main>
   );
 }
