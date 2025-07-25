@@ -1,7 +1,7 @@
 // app/layout.tsx
 import './globals.css';
-import Link from 'next/link';
 import { Metadata } from 'next';
+import Footer from '../components/Footer';
 
 export const metadata: Metadata = {
   title: 'Loto | Decentralized Lottery on Base',
@@ -35,14 +35,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="bg-slate-950 text-white font-sans">
-        <nav className="bg-slate-900 px-6 py-4 flex justify-between items-center border-b border-slate-800">
-          <Link href="/" className="text-xl font-bold text-white hover:text-violet-400">Loto</Link>
-          <div className="space-x-4">
-            <Link href="/create" className="hover:text-violet-400">Create</Link>
-            <Link href="/info" className="hover:text-violet-400">Info</Link>
-          </div>
-        </nav>
-        <main className="pt-4">{children}</main>
+        {children}
+        <Footer />
       </body>
     </html>
   );
