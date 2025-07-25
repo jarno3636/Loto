@@ -1,141 +1,113 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ethers } from 'ethers';
-import { useWalletClient } from 'wagmi';
-import { getLotteryContract } from '@/lib/lottery';
-import tokenList from '@/lib/tokenList'; // includes $TOBY, $PATIENCE, etc.
+import { useState } from 'react';
+import { useAccount, useSigner, useNetwork } from 'wagmi';
+import { getLotteryContract, isSupportedNetwork, getTokenPriceUSD } from '../../utils/lottery';
+import { commonTokens } from '../../utils/commonTokens';
+import Image from 'next/image';
 
-type Token = {
-  name: string;
-  symbol: string;
-  address: string;
-  logoURI: string;
-  decimals: number;
-  coingeckoId?: string;
-};
+export default function CreatePool() {
+  const { address } = useAccount();
+  const { data: signer } = useSigner();
+  const { chain } = useNetwork();
 
-const MIN_USD = 0.50;
-const MAX_USD = 10.0;
-
-export default function CreatePage() {
-  const { data: walletClient } = useWalletClient();
-  const [tokens, setTokens] = useState<Token[]>([]);
-  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
-  const [entryAmount, setEntryAmount] = useState('');
-  const [usdPrice, setUsdPrice] = useState<number | null>(null);
+  const [selectedToken, setSelectedToken] = useState<string>('');
+  const [entryAmount, setEntryAmount] = useState<string>('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  useEffect(() => {
-    setTokens(tokenList);
-  }, []);
+  const validateEntryAmount = async () => {
+    if (!selectedToken || !entryAmount) return false;
 
-  useEffect(() => {
-    async function fetchPrice() {
-      if (!selectedToken?.coingeckoId) return setUsdPrice(null);
-      try {
-        const res = await fetch(
-          `https://api.coingecko.com/api/v3/simple/price?ids=${selectedToken.coingeckoId}&vs_currencies=usd`
-        );
-        const json = await res.json();
-        const price = json[selectedToken.coingeckoId]?.usd;
-        setUsdPrice(price);
-      } catch (e) {
-        console.warn('Failed to fetch price', e);
-        setUsdPrice(null);
-      }
+    const usdValue = await getTokenPriceUSD(selectedToken, parseFloat(entryAmount));
+    if (!usdValue) {
+      setError('Token price unavailable. Try again later.');
+      return false;
     }
-    fetchPrice();
-  }, [selectedToken]);
+
+    if (usdValue < 1) {
+      setError('Entry amount must be at least $1 USD');
+      return false;
+    }
+
+    if (usdValue > 100) {
+      setError('Entry amount exceeds $100 USD');
+      return false;
+    }
+
+    return true;
+  };
 
   const handleCreate = async () => {
-    if (!walletClient || !selectedToken) return;
-
-    const parsedAmount = parseFloat(entryAmount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      return setError('Please enter a valid amount.');
-    }
-
-    if (usdPrice) {
-      const totalUSD = parsedAmount * usdPrice;
-      if (totalUSD < MIN_USD || totalUSD > MAX_USD) {
-        return setError(`Amount must be between $${MIN_USD} and $${MAX_USD} USD.`);
-      }
-    }
-
-    setCreating(true);
     setError('');
+    setSuccess('');
+
+    if (!signer || !isSupportedNetwork(chain?.id?.toString() || '')) {
+      setError('Please connect to Base network.');
+      return;
+    }
+
+    const isValid = await validateEntryAmount();
+    if (!isValid) return;
 
     try {
-      const signer = new ethers.providers.Web3Provider(walletClient).getSigner();
+      setCreating(true);
       const contract = getLotteryContract(signer);
-
-      const decimals = selectedToken.decimals;
-      const amountInWei = ethers.utils.parseUnits(entryAmount, decimals);
-      const tx = await contract.createPool(selectedToken.address, amountInWei);
+      const tx = await contract.createPool(selectedToken, ethers.utils.parseUnits(entryAmount, 18));
       await tx.wait();
-      alert('Pool created!');
+      setSuccess('🎉 Pool created successfully!');
       setEntryAmount('');
-    } catch (e: any) {
-      console.error(e);
-      setError(e.message || 'Failed to create pool.');
+      setSelectedToken('');
+    } catch (err: any) {
+      console.error(err);
+      setError('Failed to create pool.');
     } finally {
       setCreating(false);
     }
   };
 
   return (
-    <div className="max-w-xl mx-auto mt-12 p-6 bg-slate-800 rounded-lg shadow-lg">
-      <h1 className="text-2xl font-bold mb-4 text-white">Create a Lottery Pool</h1>
+    <main className="min-h-screen py-10 px-4 bg-slate-950 text-white">
+      <div className="max-w-xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6 text-center">🌀 Create a Lottery Pool</h1>
 
-      <div className="mb-4">
-        <label className="block mb-1 text-sm text-white">Select Token</label>
-        <select
-          className="w-full bg-slate-900 text-white p-2 rounded"
-          onChange={(e) => {
-            const token = tokens.find((t) => t.address === e.target.value);
-            setSelectedToken(token || null);
-          }}
-          value={selectedToken?.address || ''}
-        >
-          <option value="" disabled>
-            Choose token
-          </option>
-          {tokens.map((token) => (
-            <option key={token.address} value={token.address}>
-              {token.symbol}
-            </option>
-          ))}
-        </select>
+        <div className="space-y-4">
+          <label className="block text-sm font-medium">Select Token</label>
+          <select
+            value={selectedToken}
+            onChange={(e) => setSelectedToken(e.target.value)}
+            className="w-full p-3 rounded bg-slate-800 border border-slate-700 text-white"
+          >
+            <option value="">-- Choose Token --</option>
+            {commonTokens.map((token) => (
+              <option key={token.address} value={token.address}>
+                {token.symbol}
+              </option>
+            ))}
+          </select>
+
+          <label className="block text-sm font-medium">Entry Amount (in Token)</label>
+          <input
+            type="number"
+            value={entryAmount}
+            onChange={(e) => setEntryAmount(e.target.value)}
+            className="w-full p-3 rounded bg-slate-800 border border-slate-700 text-white"
+            placeholder="e.g. 5"
+          />
+
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {success && <p className="text-green-500 text-sm">{success}</p>}
+
+          <button
+            onClick={handleCreate}
+            disabled={creating || !address}
+            className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded mt-4 disabled:opacity-50"
+          >
+            {creating ? 'Creating...' : 'Create Pool'}
+          </button>
+        </div>
       </div>
-
-      <div className="mb-4">
-        <label className="block mb-1 text-sm text-white">Entry Amount</label>
-        <input
-          type="number"
-          step="any"
-          className="w-full bg-slate-900 text-white p-2 rounded"
-          value={entryAmount}
-          onChange={(e) => setEntryAmount(e.target.value)}
-          placeholder={`e.g. 10 ${selectedToken?.symbol || ''}`}
-        />
-        {usdPrice && entryAmount && (
-          <p className="text-sm text-slate-300 mt-1">
-            ≈ ${(parseFloat(entryAmount || '0') * usdPrice).toFixed(2)} USD
-          </p>
-        )}
-      </div>
-
-      {error && <p className="text-red-400 mb-3 text-sm">{error}</p>}
-
-      <button
-        className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded disabled:opacity-50"
-        onClick={handleCreate}
-        disabled={!selectedToken || creating}
-      >
-        {creating ? 'Creating...' : 'Create Pool'}
-      </button>
-    </div>
+    </main>
   );
 }
