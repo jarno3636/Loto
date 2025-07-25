@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from "framer-motion";
 import { useState, useEffect } from 'react';
 import { useWalletClient, useChainId } from 'wagmi';
 import { useRouter } from 'next/navigation';
@@ -108,13 +109,16 @@ export default function CreatePoolPage() {
           )}
         </div>
 
-        <button
-          onClick={handleCreate}
-          disabled={!selectedToken || !!toastMsg}
+        <motion.button
+          title="Click to create a new pool with the above settings."
           className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2 rounded"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleCreate}
+          disabled={!selectedToken || !!error}
         >
-          🎯 Create Pool
-        </button>
+          Create Pool
+        </motion.button>
 
         {toastMsg && <ToastAlert message={toastMsg} type={toastType} />}
       </main>
