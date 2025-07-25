@@ -1,0 +1,58 @@
+/* globals.css */
+
+/* Base page styles */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0f172a; /* Tailwind's slate-950 */
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Container fade-in animation */
+.fade-enter {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* Button style override */
+button {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+/* Smooth hover */
+button:hover {
+  opacity: 0.9;
+}
+
+/* Optional: link underline animation */
+a {
+  color: inherit;
+  text-decoration: none;
+  position: relative;
+}
+
+a::after {
+  content: '';
+  display: block;
+  width: 0;
+  height: 2px;
+  background: #7c3aed; /* violet-600 */
+  transition: width 0.3s;
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+}
+
+a:hover::after {
+  width: 100%;
+}
