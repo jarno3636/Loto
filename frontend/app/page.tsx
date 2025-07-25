@@ -1,28 +1,78 @@
 'use client';
 
-import Link from 'next/link';
-import FadeWrapper from '@/components/FadeWrapper';
+import { useEffect, useState } from 'react';
+import { getAllPools } from '@/utils/lottery';
+import { motion } from 'framer-motion';
+import PoolCard from '@/components/PoolCard';
+
+interface Pool {
+  id: string;
+  token: string;
+  entryAmount: bigint;
+  decimals: number;
+  players: number;
+  maxPlayers: number;
+  rangeType: string;
+}
 
 export default function HomePage() {
+  const [pools, setPools] = useState<Pool[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadPools = async () => {
+      try {
+        const data = await getAllPools();
+        setPools(data);
+      } catch (err) {
+        console.error('Failed to fetch pools:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadPools();
+  }, []);
+
   return (
-    <FadeWrapper>
-      <main className="max-w-3xl mx-auto py-12 px-6 text-white">
-        <h1 className="text-4xl font-bold mb-6">Welcome to Loto 🎉</h1>
-        <p className="mb-4 text-lg text-slate-300">
-          Loto is a decentralized lottery platform on Base. Join or create lottery pools using tokens like $TOBY, $PATIENCE, $TABOSHI, and more.
-        </p>
-        <div className="flex flex-col md:flex-row gap-4 mt-8">
-          <Link href="/create" className="bg-violet-600 hover:bg-violet-700 px-6 py-3 rounded text-white font-semibold text-center">
-            🎯 Create a Pool
-          </Link>
-          <Link href="/leaderboard" className="bg-slate-700 hover:bg-slate-600 px-6 py-3 rounded text-white font-semibold text-center">
-            🏆 Leaderboard
-          </Link>
-          <Link href="/info" className="bg-slate-800 hover:bg-slate-700 px-6 py-3 rounded text-white font-semibold text-center">
-            ℹ️ Info
-          </Link>
+    <main className="max-w-5xl mx-auto p-6 text-white">
+      <motion.h1
+        className="text-4xl font-bold mb-6 text-center"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        Active Lottery Pools
+      </motion.h1>
+
+      {loading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="animate-pulse bg-slate-700 h-32 rounded-lg"
+            ></div>
+          ))}
         </div>
-      </main>
-    </FadeWrapper>
+      ) : pools.length === 0 ? (
+        <div className="text-center mt-12 text-gray-400">
+          <p className="text-xl mb-2">🎟️ No active pools yet.</p>
+          <p>Create the first pool and be the early winner!</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {pools.map((pool) => (
+            <PoolCard
+              key={pool.id}
+              poolId={pool.id}
+              tokenAddress={pool.token}
+              entryAmount={pool.entryAmount}
+              decimals={pool.decimals}
+              players={pool.players}
+              maxPlayers={pool.maxPlayers}
+              rangeType={pool.rangeType}
+            />
+          ))}
+        </div>
+      )}
+    </main>
   );
 }
