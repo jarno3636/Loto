@@ -1,83 +1,71 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { getLotteryContract } from '@/lib/lottery';
-import { usePublicClient } from 'wagmi';
-import { getTokenMetadata } from '@/lib/tokenList';
-import { formatUnits } from 'viem';
+import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { formatUnits } from 'ethers';
+import ShareModal from './ShareModal';
+import { tokenList } from '@/lib/tokenList';
 
-interface Props {
+export default function PoolCard({ poolId, tokenAddress, entryAmount, currentEntries, maxEntries }: {
   poolId: number;
-}
+  tokenAddress: string;
+  entryAmount: string;
+  currentEntries: number;
+  maxEntries: number;
+}) {
+  const [showModal, setShowModal] = useState(false);
+  const token = tokenList.find((t) => t.address.toLowerCase() === tokenAddress.toLowerCase());
 
-export default function PoolCard({ poolId }: Props) {
-  const [entryAmount, setEntryAmount] = useState<bigint | null>(null);
-  const [players, setPlayers] = useState<string[]>([]);
-  const [tokenAddress, setTokenAddress] = useState<string | null>(null);
-  const client = usePublicClient();
-
-  useEffect(() => {
-    async function fetchData() {
-      if (!client) return;
-      try {
-        const contract = getLotteryContract(client);
-        const pool = await contract.pools(poolId);
-        setEntryAmount(pool.entryAmount);
-        setTokenAddress(pool.token);
-        const playersList: string[] = await contract.getPlayers(poolId);
-        setPlayers(playersList);
-      } catch (err) {
-        console.error('Failed to load pool info:', err);
-      }
-    }
-    fetchData();
-  }, [client, poolId]);
-
-  const metadata = tokenAddress ? getTokenMetadata(tokenAddress) : null;
-  const entryCount = players.length;
-  const maxPlayers = 200;
-  const progress = (entryCount / maxPlayers) * 100;
-
-  const usdPerEntry = metadata?.price
-    ? (Number(formatUnits(entryAmount || 0, metadata.decimals)) * metadata.price).toFixed(2)
-    : null;
-
-  const poolSizeUSD = usdPerEntry ? (Number(usdPerEntry) * entryCount).toFixed(2) : null;
+  const filled = Math.min(100, (currentEntries / maxEntries) * 100).toFixed(0);
 
   return (
-    <Link href={`/pool/${poolId}`}>
-      <div className="bg-slate-800 p-4 rounded-xl shadow hover:shadow-lg transition duration-300">
-        <div className="flex items-center gap-3 mb-2">
-          {metadata?.logoURI && (
-            <img
-              src={metadata.logoURI}
-              alt={`${metadata.symbol} logo`}
-              className="w-6 h-6 rounded-full"
-            />
-          )}
-          <h3 className="text-lg font-semibold text-white">
-            Pool #{poolId} — {metadata?.symbol || 'Loading...'}
-          </h3>
-        </div>
-
-        <div className="text-gray-300 text-sm mb-1">
-          {entryCount} / {maxPlayers} entries
-        </div>
-
-        {poolSizeUSD && (
-          <div className="text-sm text-green-400 mb-2">
-            Est. Pool: ${poolSizeUSD}
+    <>
+      <div className="bg-slate-800 rounded-xl p-4 shadow-lg transition-transform hover:scale-[1.015] hover:shadow-xl">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            {token && (
+              <Image src={token.logoURI} alt={token.symbol} width={24} height={24} className="rounded-full" />
+            )}
+            <span className="text-lg font-bold">{token?.symbol}</span>
           </div>
-        )}
+          <button
+            title="Share pool"
+            onClick={() => setShowModal(true)}
+            className="text-sm text-blue-400 hover:underline"
+          >
+            Share
+          </button>
+        </div>
 
-        <div className="w-full bg-slate-700 h-2 rounded">
+        <div className="text-sm mb-2">
+          Entry: <span className="font-medium">{formatUnits(entryAmount, token?.decimals || 18)}</span> {token?.symbol}
+        </div>
+
+        <div className="w-full bg-slate-700 rounded-full h-2 mb-2">
           <div
-            className="h-2 bg-violet-500 rounded"
-            style={{ width: `${progress}%` }}
+            className="bg-violet-500 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${filled}%` }}
           />
         </div>
+        <div className="text-xs text-gray-400 mb-2">
+          {currentEntries} / {maxEntries} entries
+        </div>
+
+        <Link
+          href={`/pool/${poolId}`}
+          className="block text-center mt-2 bg-violet-600 hover:bg-violet-700 text-white py-2 rounded transition"
+        >
+          View Pool
+        </Link>
       </div>
-    </Link>
+
+      {showModal && (
+        <ShareModal
+          url={`${process.env.NEXT_PUBLIC_BASE_URL}/pool/${poolId}`}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+    </>
   );
 }
