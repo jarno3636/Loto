@@ -66,10 +66,10 @@ export const tokenList: TokenInfo[] = [
     decimals: 18,
   },
   {
-    address: '0x71f5c2ee6e9fc199c57e2eb3a26d8c7c04663444',
-    symbol: 'ZORA',
-    name: 'Zora',
-    logoURI: '/tokens/zora.png',
-    decimals: 18,
+  address: '0x71f5c2ee6e9fc199c57e2eb3a26d8c7c04663444',
+  symbol: 'ZORA',
+  name: 'Zora',
+  logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x71f5c2ee6e9fc199c57e2eb3a26d8c7c04663444/logo.png',
+  decimals: 18,
   },
 ];
