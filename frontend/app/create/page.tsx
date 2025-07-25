@@ -1,21 +1,30 @@
 'use client';
 
-import { useState } from "react";
-import ToastAlert from "@/components/ToastAlert";
-import { useWalletClient } from 'wagmi';
+import { useEffect, useState } from "react";
+import { useWalletClient, useChainId } from 'wagmi';
 import { ethers } from 'ethers';
+import { useRouter } from 'next/navigation';
+import ToastAlert from "@/components/ToastAlert";
 import { getLotteryContract } from '@/lib/lottery';
 import { tokenList, TokenInfo } from '@/lib/tokenList';
 import { fetchUsdPrice } from '@/lib/price';
-import { useRouter } from 'next/navigation';
+
+const ERC20_ABI = [
+  'function approve(address spender, uint256 amount) public returns (bool)',
+  'function allowance(address owner, address spender) public view returns (uint256)',
+];
 
 export default function CreatePoolPage() {
   const { data: walletClient } = useWalletClient();
+  const chainId = useChainId();
+  const router = useRouter();
+
   const [selectedToken, setSelectedToken] = useState<TokenInfo | null>(null);
   const [entryAmount, setEntryAmount] = useState('');
   const [usdValue, setUsdValue] = useState<number | null>(null);
   const [error, setError] = useState('');
-  const router = useRouter();
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<"error" | "success" | "info">("info");
 
   useEffect(() => {
     const fetchPrice = async () => {
@@ -43,24 +52,61 @@ export default function CreatePoolPage() {
   }, [selectedToken, entryAmount]);
 
   const handleCreate = async () => {
-    if (!walletClient || !selectedToken) return;
+    if (!walletClient) {
+      setToastMsg("Connect your wallet to create a pool.");
+      setToastType("error");
+      return;
+    }
+
+    if (!selectedToken) {
+      setToastMsg("Please select a token.");
+      setToastType("error");
+      return;
+    }
+
+    if (!entryAmount || Number(entryAmount) <= 0) {
+      setToastMsg("Enter a valid entry amount.");
+      setToastType("error");
+      return;
+    }
+
+    if (usdValue && (usdValue < 1 || usdValue > 50)) {
+      setToastMsg("Entry amount must be between $1 and $50.");
+      setToastType("error");
+      return;
+    }
+
+    if (chainId !== 8453) {
+      setToastMsg("Please connect to Base Mainnet.");
+      setToastType("error");
+      return;
+    }
 
     try {
       const contract = getLotteryContract(walletClient);
       const tokenContract = new ethers.Contract(
         selectedToken.address,
-        ['function approve(address spender, uint256 amount) public returns (bool)'],
+        ERC20_ABI,
         walletClient
       );
       const parsedAmount = ethers.utils.parseUnits(entryAmount, selectedToken.decimals);
 
-      await tokenContract.approve(contract.address, parsedAmount);
+      const allowance = await tokenContract.allowance(walletClient.account.address, contract.address);
+      if (allowance.lt(parsedAmount)) {
+        const tx = await tokenContract.approve(contract.address, parsedAmount);
+        await tx.wait();
+      }
+
       const tx = await contract.createPool(selectedToken.address, parsedAmount);
       await tx.wait();
 
-      router.push('/');
-    } catch (err: any) {
-      setError(err.message || 'Transaction failed.');
+      setToastMsg("Pool created successfully!");
+      setToastType("success");
+      setTimeout(() => router.push('/'), 2000);
+    } catch (err) {
+      console.error("Error creating pool:", err);
+      setToastMsg("Something went wrong. Please try again.");
+      setToastType("error");
     }
   };
 
@@ -116,6 +162,8 @@ export default function CreatePoolPage() {
       >
         Create Pool
       </button>
+
+      {toastMsg && <ToastAlert message={toastMsg} type={toastType} />}
     </main>
   );
 }
