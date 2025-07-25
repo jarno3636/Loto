@@ -1,55 +1,30 @@
-// app/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
-import PoolCard from '../components/PoolCard';
-import { getLotteryContract } from '../utils/lottery';
-import { useProvider } from 'wagmi';
+import Link from 'next/link';
+import PoolCard from '@/components/PoolCard';
 
 export default function Home() {
-  const provider = useProvider();
-  const [poolIds, setPoolIds] = useState<number[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchPools() {
-      try {
-        const contract = getLotteryContract(provider);
-        const totalPools = await contract.poolCount();
-        const ids = [];
-
-        for (let i = totalPools - 1; i >= 0 && ids.length < 20; i--) {
-          ids.push(i);
-        }
-
-        setPoolIds(ids);
-      } catch (err) {
-        console.error('Error loading pool list:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchPools();
-  }, [provider]);
-
   return (
-    <main className="min-h-screen px-4 sm:px-6 lg:px-8 py-8 bg-slate-950 text-white">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-center">🎉 Active Lottery Pools</h1>
-
-        {loading ? (
-          <p className="text-center text-slate-400">Loading pools...</p>
-        ) : poolIds.length === 0 ? (
-          <p className="text-center text-slate-400">No pools available yet.</p>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {poolIds.map((id) => (
-              <PoolCard key={id} poolId={id} />
-            ))}
-          </div>
-        )}
+    <div className="min-h-screen px-6 py-12 text-white bg-slate-950">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-extrabold mb-2">🎯 Loto</h1>
+        <p className="text-slate-400">Join or create Base-powered lottery pools with tokens like $TOBY, $PATIENCE, $TABOSHI, $LOTO, and more.</p>
+        <Link
+          href="/create"
+          className="inline-block mt-6 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold text-white"
+        >
+          + Create New Pool
+        </Link>
       </div>
-    </main>
+
+      <div className="max-w-4xl mx-auto">
+        <h2 className="text-xl font-bold mb-4">🎲 Active Pools</h2>
+        <div className="grid gap-6 sm:grid-cols-2">
+          {[0, 1, 2, 3].map((poolId) => (
+            <PoolCard key={poolId} poolId={poolId} />
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
