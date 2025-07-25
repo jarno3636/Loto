@@ -1,95 +1,90 @@
+// app/create/page.tsx
+
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAccount, useNetwork } from 'wagmi';
-import { isSupportedNetwork } from '@/lib/lottery';
+import { useState } from 'react';
+import { useWalletClient } from 'wagmi';
+import { getLotteryContract } from '@/utils/lottery';
+import tokenList from '@/lib/tokenList';
 import { parseUnits } from 'viem';
-import TokenSelector from '@/components/TokenSelector';
-import { getLotteryContract } from '@/lib/lottery';
-import { tokens } from '@/lib/tokenList';
-import { toast } from 'sonner';
 
 export default function CreatePage() {
-  const { address } = useAccount();
-  const { chain } = useNetwork();
+  const { data: walletClient } = useWalletClient();
+  const [selectedToken, setSelectedToken] = useState(tokenList[0]);
+  const [usdValue, setUsdValue] = useState('');
+  const [status, setStatus] = useState('');
 
-  const [selectedToken, setSelectedToken] = useState(tokens[0]);
-  const [entryAmount, setEntryAmount] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
+  const validRange = {
+    min: 1, // $1 minimum
+    max: 50, // $50 maximum
+  };
 
-  const isValidEntry =
-    entryAmount &&
-    !isNaN(Number(entryAmount)) &&
-    Number(entryAmount) >= selectedToken.min &&
-    Number(entryAmount) <= selectedToken.max;
-
-  const handleCreate = async () => {
-    if (!address || !chain || !isSupportedNetwork(String(chain.id))) {
-      toast.error('Unsupported network.');
-      return;
+  const handleCreatePool = async () => {
+    if (!walletClient) return alert('Connect your wallet first!');
+    const usdAmount = parseFloat(usdValue);
+    if (isNaN(usdAmount) || usdAmount < validRange.min || usdAmount > validRange.max) {
+      return setStatus(`❌ Amount must be between $${validRange.min} and $${validRange.max}`);
     }
 
-    if (!isValidEntry) {
-      toast.error(`Entry must be between ${selectedToken.min} and ${selectedToken.max} USD`);
-      return;
-    }
+    const contract = getLotteryContract(walletClient);
+    const tokenPrice = selectedToken.usdPrice ?? 1;
+    const amount = parseUnits((usdAmount / tokenPrice).toFixed(6), selectedToken.decimals);
 
     try {
-      setIsCreating(true);
-      const contract = getLotteryContract();
-
-      const tx = await contract.createPool(
-        selectedToken.address,
-        parseUnits(entryAmount, selectedToken.decimals)
-      );
-
+      setStatus('Creating pool...');
+      const tx = await contract.createPool(selectedToken.address, amount);
       await tx.wait();
-      toast.success('Pool created!');
-      setEntryAmount('');
+      setStatus('✅ Pool created!');
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.message || 'Error creating pool');
-    } finally {
-      setIsCreating(false);
+      setStatus('❌ Error creating pool');
     }
   };
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold mb-6">Create a New Pool</h1>
+    <div className="max-w-xl mx-auto p-6 text-white">
+      <h1 className="text-3xl font-bold mb-6">🎯 Create Pool</h1>
 
-      <div className="space-y-6">
-        <div>
-          <label className="block mb-1 font-medium text-slate-300">Select Token</label>
-          <TokenSelector selected={selectedToken} onSelect={setSelectedToken} />
-        </div>
-
-        <div>
-          <label className="block mb-1 font-medium text-slate-300">
-            Entry Amount (in USD)
-          </label>
-          <input
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            value={entryAmount}
-            onChange={(e) => setEntryAmount(e.target.value)}
-            placeholder={`Min: ${selectedToken.min}, Max: ${selectedToken.max}`}
-            className="w-full px-4 py-2 rounded bg-slate-800 text-white border border-slate-700 focus:outline-none focus:ring focus:ring-violet-500"
-          />
-          <p className="text-xs mt-1 text-slate-400">
-            Allowed range: <strong>${selectedToken.min}</strong> – <strong>${selectedToken.max}</strong>
-          </p>
-        </div>
-
-        <button
-          onClick={handleCreate}
-          disabled={!isValidEntry || isCreating}
-          className="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded disabled:opacity-50 transition"
+      <div className="mb-4">
+        <label className="block mb-2">Select Token</label>
+        <select
+          className="w-full bg-slate-800 p-3 rounded text-white"
+          value={selectedToken.address}
+          onChange={(e) =>
+            setSelectedToken(tokenList.find((t) => t.address === e.target.value)!)
+          }
         >
-          {isCreating ? 'Creating Pool...' : 'Create Pool'}
-        </button>
+          {tokenList.map((token) => (
+            <option key={token.address} value={token.address}>
+              {token.symbol} — ${token.usdPrice?.toFixed(2) ?? '?'}
+            </option>
+          ))}
+        </select>
       </div>
+
+      <div className="mb-4">
+        <label className="block mb-2">Entry Amount (USD)</label>
+        <input
+          type="number"
+          step="0.01"
+          placeholder="e.g. 5"
+          value={usdValue}
+          onChange={(e) => setUsdValue(e.target.value)}
+          className="w-full bg-slate-800 p-3 rounded text-white"
+        />
+        <p className="text-sm text-gray-400 mt-1">
+          Must be between ${validRange.min} and ${validRange.max}
+        </p>
+      </div>
+
+      <button
+        onClick={handleCreatePool}
+        className="bg-emerald-500 hover:bg-emerald-600 transition text-white px-4 py-2 rounded w-full font-semibold"
+      >
+        🚀 Create Pool
+      </button>
+
+      {status && <p className="mt-4 text-center">{status}</p>}
     </div>
   );
 }
