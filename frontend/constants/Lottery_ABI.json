@@ -88,6 +88,19 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "poolId",
+        "type": "uint256"
+      }
+    ],
+    "name": "claimWinnings",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "contract IERC20",
         "name": "token",
         "type": "address"
@@ -117,29 +130,16 @@
     "type": "function"
   },
   {
-    "inputs": [
+    "inputs": [],
+    "name": "feeWallet",
+    "outputs": [
       {
-        "internalType": "uint256",
-        "name": "poolId",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
-    "name": "selectWinner",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "poolId",
-        "type": "uint256"
-      }
-    ],
-    "name": "claimWinnings",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -186,11 +186,6 @@
         "type": "uint256"
       },
       {
-        "internalType": "address[]",
-        "name": "players",
-        "type": "address[]"
-      },
-      {
         "internalType": "address",
         "name": "winner",
         "type": "address"
@@ -200,16 +195,16 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "feeWallet",
-    "outputs": [
+    "inputs": [
       {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
+        "internalType": "uint256",
+        "name": "poolId",
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view",
+    "name": "selectWinner",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]
