@@ -1,130 +1,94 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useWeb3ModalProvider } from '@web3modal/ethers/react';
 import { ethers } from 'ethers';
-import { useWalletClient } from 'wagmi';
 import { getLotteryContract } from '@/utils/lottery';
-import TOKENS from '@/utils/tokens';
-import { getUsdPrice } from '@/utils/prices';
-import { toast } from 'sonner';
+import tokenList from '@/lib/tokenList';
 
-export default function CreatePage() {
-  const { data: walletClient } = useWalletClient();
-  const [selectedToken, setSelectedToken] = useState('');
+const SMALL_POOL_RANGE = [1, 5]; // USD
+const MEDIUM_POOL_RANGE = [5, 25]; // USD
+
+export default function CreatePoolPage() {
+  const [selectedToken, setSelectedToken] = useState(tokenList[0]);
   const [entryAmount, setEntryAmount] = useState('');
-  const [usdPrice, setUsdPrice] = useState<number | null>(null);
-  const [usdValue, setUsdValue] = useState<number | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const { walletProvider } = useWeb3ModalProvider();
 
-  // Fetch price when token changes
-  useEffect(() => {
-    if (selectedToken) {
-      getUsdPrice(selectedToken)
-        .then((price) => setUsdPrice(price))
-        .catch(() => setUsdPrice(null));
-    }
-  }, [selectedToken]);
+  const handleCreatePool = async () => {
+    if (!walletProvider || !selectedToken) return;
+    const provider = new ethers.BrowserProvider(walletProvider!);
+    const signer = await provider.getSigner();
+    const contract = getLotteryContract(signer);
 
-  // Calculate USD value when amount or price changes
-  useEffect(() => {
-    if (entryAmount && usdPrice) {
-      const value = parseFloat(entryAmount) * usdPrice;
-      setUsdValue(parseFloat(value.toFixed(2)));
-    } else {
-      setUsdValue(null);
-    }
-  }, [entryAmount, usdPrice]);
+    const price = selectedToken.priceUsd || 0;
+    const amountUsd = parseFloat(entryAmount) * price;
 
-  const validateEntry = () => {
-    if (!selectedToken) return 'Please select a token.';
-    if (!entryAmount || parseFloat(entryAmount) <= 0) return 'Enter a valid entry amount.';
-    if (usdValue === null) return 'Unable to calculate USD value.';
-    if (usdValue < 1) return 'Minimum entry is $1.';
-    return '';
-  };
-
-  const handleSubmit = async () => {
-    const validation = validateEntry();
-    if (validation) {
-      setError(validation);
-      return;
+    if (amountUsd < SMALL_POOL_RANGE[0] || (amountUsd > SMALL_POOL_RANGE[1] && amountUsd < MEDIUM_POOL_RANGE[0])) {
+      return setMessage('⚠️ Amount does not match any allowed range.');
     }
 
-    if (!walletClient) {
-      toast.error('Please connect your wallet.');
-      return;
-    }
+    const decimals = selectedToken.decimals || 18;
+    const amountInWei = ethers.parseUnits(entryAmount, decimals);
 
     try {
-      setIsSubmitting(true);
-      const signer = new ethers.BrowserProvider(window.ethereum).getSigner();
-      const contract = getLotteryContract(await signer);
-
-      const tokenInfo = TOKENS.find((t) => t.address === selectedToken);
-      const amount = ethers.parseUnits(entryAmount, tokenInfo?.decimals || 18);
-      const tokenContract = new ethers.Contract(selectedToken, ['function approve(address,uint256) public returns(bool)'], await signer);
-
-      await tokenContract.approve(contract.target, amount);
-      const tx = await contract.createPool(selectedToken, amount);
-      await tx.wait();
-
-      toast.success('Pool created!');
-      setEntryAmount('');
-      setSelectedToken('');
-    } catch (err: any) {
-      console.error(err);
-      toast.error('Failed to create pool.');
-    } finally {
-      setIsSubmitting(false);
+      await contract.createPool(selectedToken.address, amountInWei);
+      setMessage('✅ Pool created successfully!');
+    } catch (err) {
+      setMessage('❌ Error creating pool.');
     }
+  };
+
+  const estimatedUsd = () => {
+    const amount = parseFloat(entryAmount);
+    const price = selectedToken.priceUsd || 0;
+    if (!amount || !price) return '';
+    return (amount * price).toFixed(2);
   };
 
   return (
-    <div className="max-w-xl mx-auto mt-10 bg-slate-900 p-6 rounded-lg shadow-md">
-      <h1 className="text-2xl font-bold mb-4 text-center">Create a Pool</h1>
+    <div className="max-w-md mx-auto px-6 py-10 text-white">
+      <h1 className="text-2xl font-bold mb-4">Create a Pool</h1>
 
-      <label className="block text-sm mb-1 text-white">Select Token</label>
+      <label className="text-sm text-slate-300">Choose Token</label>
       <select
-        className="w-full p-2 bg-slate-800 rounded mb-4"
-        value={selectedToken}
-        onChange={(e) => setSelectedToken(e.target.value)}
+        value={selectedToken.address}
+        onChange={(e) =>
+          setSelectedToken(tokenList.find((t) => t.address === e.target.value)!)
+        }
+        className="w-full mt-1 mb-4 p-2 bg-slate-800 border border-slate-600 rounded"
       >
-        <option value="">-- Choose a token --</option>
-        {TOKENS.map((token) => (
+        {tokenList.map((token) => (
           <option key={token.address} value={token.address}>
-            {token.symbol} ({token.name})
+            {token.symbol}
           </option>
         ))}
       </select>
 
-      <label className="block text-sm mb-1 text-white">Entry Amount</label>
+      <label className="text-sm text-slate-300">Entry Amount ({selectedToken?.symbol})</label>
       <input
         type="number"
-        placeholder="0.0"
-        className="w-full p-2 bg-slate-800 rounded mb-2"
         value={entryAmount}
-        onChange={(e) => {
-          setEntryAmount(e.target.value);
-          setError('');
-        }}
+        onChange={(e) => setEntryAmount(e.target.value)}
+        className="w-full mt-1 mb-4 p-2 bg-slate-800 border border-slate-600 rounded"
+        placeholder="0.0"
       />
-
-      {usdValue !== null && (
-        <p className="text-sm text-gray-300 mb-2">
-          ≈ ${usdValue} USD
-        </p>
+      {estimatedUsd() && (
+        <div className="text-sm text-slate-400 mb-4">
+          Estimated USD: ${estimatedUsd()}
+        </div>
       )}
 
-      {error && <p className="text-red-400 text-sm mb-2">{error}</p>}
-
       <button
-        onClick={handleSubmit}
-        disabled={isSubmitting}
-        className="w-full bg-blue-600 hover:bg-blue-700 transition-colors py-2 rounded font-semibold"
+        onClick={handleCreatePool}
+        className="w-full bg-emerald-500 hover:bg-emerald-600 transition py-2 rounded font-semibold text-white"
       >
-        {isSubmitting ? 'Creating...' : 'Create Pool'}
+        Create Pool
       </button>
+
+      {message && (
+        <div className="mt-4 text-sm text-center text-slate-300">{message}</div>
+      )}
     </div>
   );
 }
