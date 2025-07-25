@@ -8,14 +8,13 @@ const fallbackPrices: Record<string, number> = {
   '0x501b2a56dd25d2dfada3e4f4fb020da2d8a9fe8d': 0.05
 };
 
-export async function getPrice(tokenAddress: string): Promise<number> {
+export async function fetchUsdPrice(symbol: string): Promise<number | null> {
   try {
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/simple/token_price/base?contract_addresses=${tokenAddress}&vs_currencies=usd`
-    );
-    const data = await response.json();
-    return data?.[tokenAddress.toLowerCase()]?.usd ?? fallbackPrices[tokenAddress.toLowerCase()] ?? 0;
-  } catch {
-    return fallbackPrices[tokenAddress.toLowerCase()] ?? 0;
+    const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${symbol.toLowerCase()}&vs_currencies=usd`);
+    const data = await res.json();
+    return data[symbol.toLowerCase()]?.usd ?? null;
+  } catch (error) {
+    console.error('Price fetch failed:', error);
+    return null;
   }
 }
