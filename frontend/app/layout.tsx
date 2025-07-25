@@ -1,6 +1,6 @@
-// app/layout.tsx
 import './globals.css';
 import { Metadata } from 'next';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export const metadata: Metadata = {
   title: 'Loto | Decentralized Lottery on Base',
@@ -8,16 +8,8 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://loto-gamma.vercel.app'),
   openGraph: {
     title: 'Loto | Win from Decentralized Lottery Pools',
-    description:
-      'Create or join community-powered lottery pools with your favorite tokens like $TOBY, $PATIENCE, $TABOSHI, and more.',
-    images: [
-      {
-        url: '/meta-preview.png',
-        width: 1200,
-        height: 630,
-        alt: 'Loto decentralized lottery app',
-      },
-    ],
+    description: 'Create or join community-powered lottery pools with your favorite tokens like $TOBY, $PATIENCE, $TABOSHI, and more.',
+    images: [{ url: '/meta-preview.png', width: 1200, height: 630, alt: 'Loto decentralized lottery app' }],
     type: 'website',
   },
   twitter: {
@@ -35,7 +27,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="bg-slate-950 text-white font-sans">
-        <div className="page-transition">{children}</div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key="page"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.4 }}
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
       </body>
     </html>
   );
