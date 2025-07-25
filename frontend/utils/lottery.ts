@@ -1,13 +1,8 @@
-import { ethers } from 'ethers';
-import LotteryABI from './LotteryABI.json';
-
-const LOTTERY_CONTRACT_ADDRESS = '0x828A55DBfdbC97519aebb8F49aeAdF3084eB6dEa'; // Your deployed address
-const SUPPORTED_NETWORKS = ['8453']; // Base Mainnet
-
-export function getLotteryContract(providerOrSigner: ethers.Provider | ethers.Signer) {
-  return new ethers.Contract(LOTTERY_CONTRACT_ADDRESS, LotteryABI, providerOrSigner);
-}
-
-export function isSupportedNetwork(chainId: string) {
-  return SUPPORTED_NETWORKS.includes(chainId);
+export function getTimeRemaining(createdAt: number): string {
+  const duration = 5 * 60 * 1000; // 5 minutes
+  const timeLeft = createdAt + duration - Date.now();
+  if (timeLeft <= 0) return 'Ready to draw';
+  const mins = Math.floor(timeLeft / 60000);
+  const secs = Math.floor((timeLeft % 60000) / 1000);
+  return `${mins}m ${secs}s`;
 }
