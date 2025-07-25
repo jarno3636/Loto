@@ -1,41 +1,28 @@
 'use client';
 
-import PoolCard from '@/components/PoolCard';
-import { useEffect, useState } from 'react';
-import { getLotteryContract } from '@/lib/lottery';
-import { usePublicClient } from 'wagmi';
+import Link from 'next/link';
+import FadeWrapper from '@/components/FadeWrapper';
 
 export default function HomePage() {
-  const [poolCount, setPoolCount] = useState(0);
-  const client = usePublicClient();
-
-  useEffect(() => {
-    async function fetchCount() {
-      if (!client) return;
-      try {
-        const contract = getLotteryContract(client);
-        const count = await contract.poolCount();
-        setPoolCount(Number(count));
-      } catch (err) {
-        console.error('Failed to load pool count:', err);
-      }
-    }
-    fetchCount();
-  }, [client]);
-
   return (
-    <main className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold text-white mb-6">Active Pools</h1>
-
-      {poolCount === 0 ? (
-        <p className="text-gray-400">No pools yet. Create one to get started!</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: poolCount }, (_, i) => (
-            <PoolCard key={i} poolId={i} />
-          ))}
+    <FadeWrapper>
+      <main className="max-w-3xl mx-auto py-12 px-6 text-white">
+        <h1 className="text-4xl font-bold mb-6">Welcome to Loto 🎉</h1>
+        <p className="mb-4 text-lg text-slate-300">
+          Loto is a decentralized lottery platform on Base. Join or create lottery pools using tokens like $TOBY, $PATIENCE, $TABOSHI, and more.
+        </p>
+        <div className="flex flex-col md:flex-row gap-4 mt-8">
+          <Link href="/create" className="bg-violet-600 hover:bg-violet-700 px-6 py-3 rounded text-white font-semibold text-center">
+            🎯 Create a Pool
+          </Link>
+          <Link href="/leaderboard" className="bg-slate-700 hover:bg-slate-600 px-6 py-3 rounded text-white font-semibold text-center">
+            🏆 Leaderboard
+          </Link>
+          <Link href="/info" className="bg-slate-800 hover:bg-slate-700 px-6 py-3 rounded text-white font-semibold text-center">
+            ℹ️ Info
+          </Link>
         </div>
-      )}
-    </main>
+      </main>
+    </FadeWrapper>
   );
 }
