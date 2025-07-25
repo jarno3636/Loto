@@ -1,24 +1,34 @@
+// app/page.tsx
 'use client';
 
-import WalletConnector from '../components/WalletConnector';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import Link from 'next/link';
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <main className="min-h-screen bg-slate-900 text-white p-4">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-4 text-center text-blue-300">🎟️ Loto: Onchain Lottery</h1>
+    <main className="flex min-h-screen flex-col items-center justify-center px-4 text-center bg-gradient-to-br from-slate-900 to-slate-950">
+      <div className="bg-white/5 backdrop-blur-lg rounded-xl p-8 shadow-xl max-w-xl w-full border border-white/10">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">Loto</h1>
+        <p className="text-slate-300 text-lg mb-6">
+          Join or create community-powered lottery pools with Base tokens like $TOBY, $PATIENCE, and $TABOSHI.
+        </p>
 
-        {/* Wallet Connect UI */}
-        <div className="mb-6 flex justify-center">
-          <WalletConnector />
+        <ConnectButton />
+
+        <div className="mt-6 flex justify-center gap-4">
+          <Link
+            href="/create"
+            className="px-6 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition font-medium"
+          >
+            Create Pool
+          </Link>
+          <Link
+            href="/pools"
+            className="px-6 py-2 rounded-full border border-white/20 text-white hover:bg-white/10 transition font-medium"
+          >
+            View Pools
+          </Link>
         </div>
-
-        <section className="bg-slate-800 p-6 rounded-lg shadow-lg">
-          <h2 className="text-2xl mb-3 text-white font-semibold">Current Pools</h2>
-          <p className="text-slate-300">Once connected, you’ll be able to view available pools, create new ones, and enter for a chance to win big!</p>
-
-          {/* Future: pool listing here */}
-        </section>
       </div>
     </main>
   );
