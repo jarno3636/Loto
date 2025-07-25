@@ -1,22 +1,24 @@
-import { ethers } from 'ethers';
-import LotteryABI from './LotteryABI.json';
+import Head from 'next/head';
+import CreatePool from '../components/CreatePool';
+import PoolCard from '../components/PoolCard';
 
-const LOTTERY_CONTRACT_ADDRESS = '0x828A55DBfdbC97519aebb8F49aeAdF3084eB6dEa'; // replace if needed
-const SUPPORTED_NETWORKS = ['8453']; // Base Mainnet
+export default function Home() {
+  return (
+    <div className="p-6">
+      <Head>
+        <title>Loto App</title>
+        <meta name="description" content="Decentralized Lottery DApp" />
+      </Head>
 
-export function getLotteryContract(providerOrSigner: ethers.Provider | ethers.Signer) {
-  return new ethers.Contract(LOTTERY_CONTRACT_ADDRESS, LotteryABI, providerOrSigner);
+      <h1 className="text-3xl font-bold mb-4">🎯 Loto Pools</h1>
+      <CreatePool />
 
-import PoolCard from "../components/PoolCard";
-
-// Example usage
-<div className="grid gap-4">
-  {[0, 1, 2].map((id) => (
-    <PoolCard key={id} poolId={id} />
-  ))}
-</div>  
-}
-
-export function isSupportedNetwork(chainId: string) {
-  return SUPPORTED_NETWORKS.includes(chainId);
+      <div className="grid gap-6 mt-6">
+        {/* Example pool IDs: 0, 1, 2 */}
+        {[0, 1, 2].map((id) => (
+          <PoolCard key={id} poolId={id} />
+        ))}
+      </div>
+    </div>
+  );
 }
