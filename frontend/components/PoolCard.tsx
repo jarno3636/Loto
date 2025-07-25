@@ -1,71 +1,101 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ethers } from 'ethers';
 import { getLotteryContract } from '../utils/lottery';
-import { useProvider } from 'wagmi';
-import JoinPoolModal from './JoinPoolModal';
+import { useWeb3ModalProvider } from '@web3modal/ethers/react';
+import tokenList from '../lib/tokenList';
 
 interface PoolCardProps {
   poolId: number;
 }
 
+interface Pool {
+  creator: string;
+  token: string;
+  entryAmount: bigint;
+  createdAt: bigint;
+  players: string[];
+  winner: string;
+}
+
 export default function PoolCard({ poolId }: PoolCardProps) {
-  const provider = useProvider();
-  const [pool, setPool] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [showJoin, setShowJoin] = useState(false);
+  const [pool, setPool] = useState<Pool | null>(null);
+  const { walletProvider } = useWeb3ModalProvider();
 
   useEffect(() => {
-    async function fetchPool() {
-      try {
-        const contract = getLotteryContract(provider);
-        const data = await contract.pools(poolId);
-
-        const players = await contract.getPoolPlayers(poolId).catch(() => []);
-        setPool({
-          ...data,
-          players,
-          playerCount: players?.length || 0,
-        });
-      } catch (err) {
-        console.error('Error loading pool', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
+    const fetchPool = async () => {
+      if (!walletProvider) return;
+      const provider = new ethers.BrowserProvider(walletProvider!);
+      const contract = getLotteryContract(provider);
+      const rawPool = await contract.pools(poolId);
+      const players = await contract.getPlayers(poolId); // assumes getPlayers is public view
+      setPool({
+        creator: rawPool.creator,
+        token: rawPool.token,
+        entryAmount: rawPool.entryAmount,
+        createdAt: rawPool.createdAt,
+        players,
+        winner: rawPool.winner,
+      });
+    };
     fetchPool();
-  }, [provider, poolId]);
+  }, [poolId, walletProvider]);
 
-  if (loading) {
+  if (!pool) {
     return (
-      <div className="bg-slate-900 p-4 rounded-lg shadow animate-pulse h-[150px]">
-        Loading pool #{poolId}...
+      <div className="p-6 border border-slate-700 rounded-xl bg-slate-800/40 shadow-md">
+        <div className="text-center text-slate-400">Loading pool #{poolId}...</div>
       </div>
     );
   }
 
-  if (!pool || pool.entryAmount.eq(0)) {
-    return null; // skip empty pools
-  }
+  const tokenInfo = tokenList.find((t) => t.address.toLowerCase() === pool.token.toLowerCase());
+  const entryAmount = Number(ethers.formatUnits(pool.entryAmount, tokenInfo?.decimals || 18));
+  const totalPlayers = pool.players.length;
+  const totalValue = entryAmount * totalPlayers;
+  const tokenPrice = tokenInfo?.priceUsd || 0;
+  const estimatedUsd = (totalValue * tokenPrice).toFixed(2);
+  const percentFilled = Math.min(100, (totalPlayers / 200) * 100);
 
   return (
-    <div className="bg-slate-900 p-4 rounded-lg shadow-md border border-slate-700">
-      <div className="text-lg font-semibold mb-2">Pool #{poolId}</div>
-      <div className="text-sm text-slate-400 mb-1">Token: {pool.token}</div>
-      <div className="text-sm text-slate-400 mb-1">
-        Entry: {Number(pool.entryAmount) / 1e18} tokens
+    <div className="p-5 border border-slate-700 rounded-xl bg-slate-900/60 hover:shadow-xl transition">
+      <div className="flex items-center gap-3 mb-4">
+        {tokenInfo?.logoURI && (
+          <img
+            src={tokenInfo.logoURI}
+            alt={`${tokenInfo.symbol} logo`}
+            className="w-7 h-7 rounded-full"
+          />
+        )}
+        <div>
+          <div className="font-bold text-lg text-white">{tokenInfo?.symbol || 'Token'}</div>
+          <div className="text-xs text-slate-400">Pool #{poolId}</div>
+        </div>
       </div>
-      <div className="text-sm text-slate-400 mb-1">Players: {pool.playerCount}</div>
 
-      <button
-        onClick={() => setShowJoin(true)}
-        className="mt-4 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded w-full"
-      >
-        Join Pool
-      </button>
+      <div className="mb-2">
+        <div className="text-sm text-slate-300">Entries: {totalPlayers} / 200</div>
+        <div className="w-full bg-slate-700 h-2 rounded">
+          <div
+            className="bg-emerald-400 h-2 rounded"
+            style={{ width: `${percentFilled}%` }}
+          />
+        </div>
+      </div>
 
-      <JoinPoolModal isOpen={showJoin} onClose={() => setShowJoin(false)} poolId={poolId} />
+      <div className="mt-4 flex justify-between items-center">
+        <div>
+          <div className="text-sm text-slate-400">Entry:</div>
+          <div className="font-medium text-white">
+            {entryAmount.toFixed(4)} {tokenInfo?.symbol}
+          </div>
+        </div>
+        <div>
+          <div className="text-sm text-slate-400">Estimated Pool</div>
+          <div className="font-medium text-white">${estimatedUsd}</div>
+        </div>
+      </div>
     </div>
   );
 }
