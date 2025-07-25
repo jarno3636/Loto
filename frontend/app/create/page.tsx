@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from "react";
+import ToastAlert from "@/components/ToastAlert";
 import { useWalletClient } from 'wagmi';
 import { ethers } from 'ethers';
 import { getLotteryContract } from '@/lib/lottery';
