@@ -1,6 +1,5 @@
 // frontend/lib/price.ts
 
-// Map symbols to their contract addresses on Base (for CoinGecko)
 const COINGECKO_MAP: Record<string, string> = {
   TOBY: '0xbcad0a417b299f611f386e9ab38a049e06494c0c',
   PATIENCE: '0x6d96f18f00b815b2109a3766e79f6a7ad7785624',
@@ -21,19 +20,18 @@ export async function fetchUsdPrice(symbol: string): Promise<number | null> {
   try {
     const address = COINGECKO_MAP[symbol.toUpperCase()];
     if (address) {
-      // CoinGecko API for Base tokens by contract address
       const url = `https://api.coingecko.com/api/v3/simple/token_price/base?contract_addresses=${address}&vs_currencies=usd`;
-      const resp = await fetch(url, { next: { revalidate: 60 } }); // 60s cache for serverless
+      const resp = await fetch(url, { next: { revalidate: 60 } });
       if (resp.ok) {
         const json = await resp.json();
         const price = json[address.toLowerCase()]?.usd;
         if (typeof price === "number" && price > 0) return price;
       }
     }
-    // Fallback if not found or error
     return FALLBACK_PRICES[symbol.toUpperCase()] ?? null;
   } catch (e) {
-    // Final fallback
     return FALLBACK_PRICES[symbol.toUpperCase()] ?? null;
   }
 }
+
+export { fetchUsdPrice as getTokenPriceUSD }; // <- add this if you want both imports to work
