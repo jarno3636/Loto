@@ -2,18 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useWalletClient, useChainId } from 'wagmi';
-import { ethers, parseUnits } from 'ethers';
 import { tokenList } from '@/lib/tokenList';
 import { fetchUsdPrice } from '@/lib/price';
 import { getLotteryContract } from '@/lib/lottery';
+import { ethers, BrowserProvider, parseUnits } from 'ethers';
 import { motion } from 'framer-motion';
+
+// Helper to get ethers v6 signer from browser wallet (MetaMask, Coinbase, etc)
+async function getEthersSigner() {
+  if (typeof window === 'undefined' || !window.ethereum) return null;
+  const provider = new BrowserProvider(window.ethereum);
+  return await provider.getSigner();
+}
 
 export default function PoolDetailPage() {
   const router = useRouter();
   const { id } = useParams();
-  const { data: walletClient } = useWalletClient();
-  const chainId = useChainId();
 
   const [poolId, setPoolId] = useState<string>('');
   const [tokenAddress, setTokenAddress] = useState('');
@@ -47,31 +51,21 @@ export default function PoolDetailPage() {
   }, [token, entryAmount]);
 
   const handleEnter = async () => {
-    if (!walletClient || !token) {
+    if (!token) {
       setError('Connect your wallet and select a token.');
       return;
     }
-
     if (!entryAmount || isNaN(Number(entryAmount)) || Number(entryAmount) <= 0) {
       setError('Enter a valid entry amount.');
       return;
     }
 
-    if (chainId !== 8453) {
-      setError('Switch to Base Mainnet to enter this pool.');
-      return;
-    }
-
     try {
-      // Use injected wallet for signer
-      let signer: ethers.JsonRpcSigner | undefined;
-      if (typeof window !== "undefined" && window.ethereum) {
-        const web3Provider = new ethers.BrowserProvider(window.ethereum);
-        signer = await web3Provider.getSigner();
-      } else {
-        throw new Error('No injected wallet available');
+      const signer = await getEthersSigner();
+      if (!signer) {
+        setError('Could not connect to wallet provider.');
+        return;
       }
-
       const contract = getLotteryContract(signer);
       const parsedAmount = parseUnits(entryAmount, token.decimals);
 
@@ -143,3 +137,4 @@ export default function PoolDetailPage() {
       </motion.button>
     </motion.main>
   );
+}
