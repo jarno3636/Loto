@@ -28,7 +28,9 @@ export default function HomePools() {
             ></div>
           ))
         ) : (
-          poolIds.map((id) => <PoolCard key={id} poolId={String(id)} />)
+          poolIds.map((id) => (
+            <PoolCard key={id} poolId={String(id)} />  // <--- Fix: id converted to string
+          ))
         )}
       </div>
     </section>
