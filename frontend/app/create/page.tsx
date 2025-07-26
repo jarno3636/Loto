@@ -2,15 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { useWalletClient } from 'wagmi';
-import { ethers, parseUnits } from 'ethers';
+import { ethers, BrowserProvider, parseUnits } from 'ethers'; // ethers v6
 import { getLotteryContract } from '@/lib/lottery';
 import { tokenList, TokenInfo } from '@/lib/tokenList';
 import { fetchUsdPrice } from '@/lib/price';
 import { useRouter } from 'next/navigation';
 import MotionButton from '@/components/MotionButton';
 
+// Helper to get ethers v6 signer from browser wallet (MetaMask, Coinbase, etc)
+async function getEthersSigner() {
+  if (typeof window === 'undefined' || !window.ethereum) return null;
+  const provider = new BrowserProvider(window.ethereum);
+  return await provider.getSigner();
+}
+
 export default function CreatePoolPage() {
-  const { data: walletClient } = useWalletClient();
   const [selectedToken, setSelectedToken] = useState<TokenInfo | null>(null);
   const [entryAmount, setEntryAmount] = useState('');
   const [usdValue, setUsdValue] = useState<number | null>(null);
@@ -43,14 +49,19 @@ export default function CreatePoolPage() {
   }, [selectedToken, entryAmount]);
 
   const handleCreate = async () => {
-    if (!walletClient || !selectedToken) return;
+    if (!selectedToken) return;
 
     try {
-      const contract = getLotteryContract(walletClient);
+      const signer = await getEthersSigner();
+      if (!signer) {
+        setError('Could not connect to wallet provider.');
+        return;
+      }
+      const contract = getLotteryContract(signer);
       const tokenContract = new ethers.Contract(
         selectedToken.address,
         ['function approve(address spender, uint256 amount) public returns (bool)'],
-        walletClient
+        signer
       );
       const parsedAmount = parseUnits(entryAmount, selectedToken.decimals);
 
