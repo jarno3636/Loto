@@ -1,4 +1,4 @@
-'use client';
+use client';
 
 import PoolCard from './PoolCard';
 import { useEffect, useState } from 'react';
