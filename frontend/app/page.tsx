@@ -1,5 +1,6 @@
 'use client';
 
+import { getAllPools } from '@/lib/lottery';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import PoolCard from '@/components/PoolCard';
