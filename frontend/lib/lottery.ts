@@ -1,26 +1,27 @@
 // frontend/lib/lottery.ts
-import { Contract, JsonRpcSigner, Provider, JsonRpcProvider } from 'ethers';
+import { Contract, JsonRpcProvider } from 'ethers';
 import LotteryABI from './LotteryABI.json';
 
 export const LOTTERY_CONTRACT_ADDRESS = '0x828A55DBfdbC97519aebb8F49aeAdF3084eB6dEa';
 
-// Accepts either a Provider or a JsonRpcSigner (ethers v6 style)
-export function getLotteryContract(providerOrSigner: Provider | JsonRpcSigner) {
+export function getLotteryContract(providerOrSigner: any) {
   return new Contract(LOTTERY_CONTRACT_ADDRESS, LotteryABI, providerOrSigner);
 }
 
-// You can use a public Base Mainnet RPC (replace with your own for more reliability)
 const BASE_RPC_URL = 'https://mainnet.base.org';
 
-// Pagination: fetch pools in chunks
-export async function getAllPools(offset: number = 0, limit: number = 10) {
+// Pagination: pass offset (skip this many from end) and limit (number to fetch)
+export async function getAllPools(offset = 0, limit = 10) {
   const provider = new JsonRpcProvider(BASE_RPC_URL);
   const contract = getLotteryContract(provider);
 
   const poolCount: number = Number(await contract.poolCount());
-  const pools = [];
+  // Pools are 0-indexed; show latest pools first
+  const start = Math.max(poolCount - offset - limit, 0);
+  const end = Math.max(poolCount - offset, 0);
 
-  for (let i = offset; i < Math.min(offset + limit, poolCount); i++) {
+  const pools = [];
+  for (let i = end - 1; i >= start; i--) {
     const pool = await contract.pools(i);
     pools.push({
       id: i,
