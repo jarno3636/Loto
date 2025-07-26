@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useWalletClient, useChainId } from 'wagmi';
-import { ethers } from 'ethers';
+// ✅ Use direct imports for ethers v6+
+import { Contract, parseUnits } from 'ethers';
 import { tokenList } from '@/lib/tokenList';
 import { fetchUsdPrice } from '@/lib/price';
 import { getLotteryContract } from '@/lib/lottery';
@@ -64,9 +65,11 @@ export default function PoolDetailPage() {
 
     try {
       const contract = getLotteryContract(walletClient);
-      const parsedAmount = ethers.utils.parseUnits(entryAmount, token.decimals);
+      // ✅ Use direct parseUnits import
+      const parsedAmount = parseUnits(entryAmount, token.decimals);
 
-      const tokenContract = new ethers.Contract(
+      // ✅ Use direct Contract import
+      const tokenContract = new Contract(
         token.address,
         ['function approve(address spender, uint256 amount) public returns (bool)'],
         walletClient
