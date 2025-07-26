@@ -1,77 +1,57 @@
 'use client';
 
-import { getAllPools } from '@/lib/lottery';
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import PoolCard from '@/components/PoolCard';
+import { getAllPools } from '@/lib/lottery';
 
-interface Pool {
-  id: string;
+type Pool = {
+  id: number;
+  creator: string;
   token: string;
-  entryAmount: bigint;
-  decimals: number;
-  players: number;
-  maxPlayers: number;
-  rangeType: string;
-}
+  entryAmount: string;
+  createdAt: string;
+  players: string[];
+  winner: string;
+};
 
 export default function HomePage() {
   const [pools, setPools] = useState<Pool[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadPools = async () => {
+    async function fetchPools() {
+      setLoading(true);
       try {
         const data = await getAllPools();
         setPools(data);
-      } catch (err) {
-        console.error('Failed to fetch pools:', err);
-      } finally {
-        setLoading(false);
+      } catch (error) {
+        console.error('Failed to fetch pools:', error);
       }
-    };
-    loadPools();
+      setLoading(false);
+    }
+
+    fetchPools();
   }, []);
 
   return (
-    <main className="max-w-5xl mx-auto p-6 text-white">
-      <motion.h1
-        className="text-4xl font-bold mb-6 text-center"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        Active Lottery Pools
-      </motion.h1>
-
+    <main className="max-w-2xl mx-auto p-6 text-white">
+      <h1 className="text-3xl font-bold mb-6">Active Lottery Pools</h1>
       {loading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <div
-              key={i}
-              className="animate-pulse bg-slate-700 h-32 rounded-lg"
-            ></div>
-          ))}
-        </div>
+        <p>Loading pools...</p>
       ) : pools.length === 0 ? (
-        <div className="text-center mt-12 text-gray-400">
-          <p className="text-xl mb-2">🎟️ No active pools yet.</p>
-          <p>Create the first pool and be the early winner!</p>
-        </div>
+        <p>No pools found.</p>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {pools.map((pool) => (
-            <PoolCard
-              key={pool.id}
-              poolId={pool.id}
-              tokenAddress={pool.token}
-              entryAmount={pool.entryAmount}
-              decimals={pool.decimals}
-              players={pool.players}
-              maxPlayers={pool.maxPlayers}
-              rangeType={pool.rangeType}
-            />
+        <ul className="space-y-4">
+          {pools.map(pool => (
+            <li key={pool.id} className="bg-slate-800 p-4 rounded shadow">
+              <div><strong>Pool #{pool.id}</strong></div>
+              <div>Token: <span className="font-mono">{pool.token}</span></div>
+              <div>Entry Amount: {pool.entryAmount.toString()}</div>
+              <div>Creator: <span className="font-mono">{pool.creator}</span></div>
+              <div>Players: {pool.players.length}</div>
+              <div>Winner: {pool.winner ? pool.winner : 'Not drawn'}</div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </main>
   );
