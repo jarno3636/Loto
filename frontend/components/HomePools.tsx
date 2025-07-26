@@ -1,4 +1,4 @@
-use client';
+'use client';
 
 import PoolCard from './PoolCard';
 import { useEffect, useState } from 'react';
@@ -28,7 +28,7 @@ export default function HomePools() {
             ></div>
           ))
         ) : (
-          poolIds.map((id) => <PoolCard key={id} poolId={id} />)
+          poolIds.map((id) => <PoolCard key={id} poolId={String(id)} />)
         )}
       </div>
     </section>
