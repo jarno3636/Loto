@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useWalletClient } from 'wagmi';
-import { ethers } from 'ethers';
+import { ethers, parseUnits } from 'ethers'; // FIX: ethers v6, direct import for parseUnits
 import { getLotteryContract } from '@/lib/lottery';
 import { tokenList, TokenInfo } from '@/lib/tokenList';
 import { fetchUsdPrice } from '@/lib/price';
@@ -52,7 +52,7 @@ export default function CreatePoolPage() {
         ['function approve(address spender, uint256 amount) public returns (bool)'],
         walletClient
       );
-      const parsedAmount = ethers.utils.parseUnits(entryAmount, selectedToken.decimals);
+      const parsedAmount = parseUnits(entryAmount, selectedToken.decimals); // FIX
 
       await tokenContract.approve(contract.address, parsedAmount);
       const tx = await contract.createPool(selectedToken.address, parsedAmount);
