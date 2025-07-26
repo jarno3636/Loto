@@ -10,23 +10,24 @@ export function getLotteryContract(provider: any) {
 
 const BASE_RPC_URL = 'https://mainnet.base.org';
 
-export async function getAllPools() {
+export async function getAllPools(offset = 0, limit = 10) {
   const provider = new JsonRpcProvider(BASE_RPC_URL);
   const contract = getLotteryContract(provider);
+
   const poolCount: number = Number(await contract.poolCount());
   const pools = [];
 
-  for (let i = 0; i < poolCount; i++) {
+  for (let i = offset; i < Math.min(poolCount, offset + limit); i++) {
     const pool = await contract.pools(i);
     pools.push({
-      poolId: String(i),  // Ensure it's a string!
+      poolId: String(i),
       tokenAddress: pool.token,
       entryAmount: pool.entryAmount.toString(),
-      decimals: 18, // If your contract has decimals, replace with correct value!
+      decimals: 18, // Adjust if needed!
       players: pool.players,
       winner: pool.winner,
-      createdAt: Number(pool.createdAt) * 1000, // If unix seconds, convert to ms
+      createdAt: Number(pool.createdAt) * 1000,
     });
   }
-  return pools;
+  return { pools, poolCount }; // <--- This is the key!
 }
