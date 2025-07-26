@@ -2,18 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useWalletClient, useChainId } from 'wagmi';
-import { ethers, parseUnits } from 'ethers';
 import { tokenList } from '@/lib/tokenList';
 import { fetchUsdPrice } from '@/lib/price';
 import { getLotteryContract } from '@/lib/lottery';
+import { ethers, BrowserProvider, parseUnits } from 'ethers';
 import { motion } from 'framer-motion';
+
+// Helper to get ethers v6 signer from browser wallet (MetaMask, Coinbase, etc)
+async function getEthersSigner() {
+  if (typeof window === 'undefined' || !window.ethereum) return null;
+  const provider = new BrowserProvider(window.ethereum);
+  return await provider.getSigner();
+}
 
 export default function PoolDetailPage() {
   const router = useRouter();
   const { id } = useParams();
-  const { data: walletClient } = useWalletClient();
-  const chainId = useChainId();
 
   const [poolId, setPoolId] = useState<string>('');
   const [tokenAddress, setTokenAddress] = useState('');
@@ -47,29 +51,28 @@ export default function PoolDetailPage() {
   }, [token, entryAmount]);
 
   const handleEnter = async () => {
-    if (!walletClient || !token) {
+    if (!token) {
       setError('Connect your wallet and select a token.');
       return;
     }
-
     if (!entryAmount || isNaN(Number(entryAmount)) || Number(entryAmount) <= 0) {
       setError('Enter a valid entry amount.');
       return;
     }
 
-    if (chainId !== 8453) {
-      setError('Switch to Base Mainnet to enter this pool.');
-      return;
-    }
-
     try {
-      const contract = getLotteryContract(walletClient);
+      const signer = await getEthersSigner();
+      if (!signer) {
+        setError('Could not connect to wallet provider.');
+        return;
+      }
+      const contract = getLotteryContract(signer);
       const parsedAmount = parseUnits(entryAmount, token.decimals);
 
       const tokenContract = new ethers.Contract(
         token.address,
         ['function approve(address spender, uint256 amount) public returns (bool)'],
-        walletClient
+        signer
       );
 
       const approvalTx = await tokenContract.approve(contract.address, parsedAmount);
