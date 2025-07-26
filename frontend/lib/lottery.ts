@@ -1,14 +1,9 @@
-import { getContract } from 'wagmi/actions';
-import { abi as LotteryABI } from '../abi/LotteryABI.json';
-import { WalletClient } from 'viem';
-import { publicClient } from '@/lib/wallet'; // If you have a separate client setup
+// frontend/lib/lottery.ts
+import { ethers } from 'ethers';
+import LotteryABI from '../LotteryABI.json';
 
-const CONTRACT_ADDRESS = '0x828A55DBfdbC97519aebb8F49aeAdF3084eB6dEa'; // Replace with actual address
+export const LOTTERY_CONTRACT_ADDRESS = '0x828A55DBfdbC97519aebb8F49aeAdF3084eB6dEa';
 
-export function getLotteryContract(walletClient: WalletClient) {
-  return getContract({
-    address: CONTRACT_ADDRESS as `0x${string}`,
-    abi: LotteryABI,
-    walletClient,
-  });
+export function getLotteryContract(providerOrSigner: ethers.Provider | ethers.Signer) {
+  return new ethers.Contract(LOTTERY_CONTRACT_ADDRESS, LotteryABI, providerOrSigner);
 }
