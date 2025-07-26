@@ -9,7 +9,7 @@ import { fetchUsdPrice } from '@/lib/price';
 import { getLotteryContract } from '@/lib/lottery';
 import { motion } from 'framer-motion';
 
-export default function EnterPoolPage() {
+export default function PoolDetailPage() {
   const router = useRouter();
   const { id } = useParams();
   const { data: walletClient } = useWalletClient();
@@ -63,13 +63,22 @@ export default function EnterPoolPage() {
     }
 
     try {
-      const contract = getLotteryContract(walletClient);
+      // Use injected wallet for signer
+      let signer: ethers.JsonRpcSigner | undefined;
+      if (typeof window !== "undefined" && window.ethereum) {
+        const web3Provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await web3Provider.getSigner();
+      } else {
+        throw new Error('No injected wallet available');
+      }
+
+      const contract = getLotteryContract(signer);
       const parsedAmount = parseUnits(entryAmount, token.decimals);
 
       const tokenContract = new ethers.Contract(
         token.address,
         ['function approve(address spender, uint256 amount) public returns (bool)'],
-        walletClient
+        signer
       );
 
       const approvalTx = await tokenContract.approve(contract.address, parsedAmount);
