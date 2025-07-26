@@ -2,56 +2,23 @@
 
 import PoolCard, { PoolCardProps } from './PoolCard';
 import { useEffect, useState } from 'react';
-// import { getAllPools } from '@/lib/lottery'; // Uncomment when you have real fetch function
-
-type Pool = PoolCardProps;
+import { getAllPools } from '@/lib/lottery';
 
 export default function HomePools() {
-  const [pools, setPools] = useState<Pool[]>([]);
+  const [pools, setPools] = useState<PoolCardProps[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate fetching top 3 pools. Replace with real fetch logic.
-    setTimeout(() => {
-      setPools([
-        {
-          poolId: '0',
-          tokenAddress: '0x0000000000000000000000000000000000000000',
-          entryAmount: '1000000000000000000',
-          decimals: 18,
-          players: ['0xplayer1', '0xplayer2'],
-          winner: '',
-          createdAt: Date.now() - 1000000,
-        },
-        {
-          poolId: '1',
-          tokenAddress: '0x0000000000000000000000000000000000000001',
-          entryAmount: '5000000000000000000',
-          decimals: 18,
-          players: ['0xplayer1'],
-          winner: '0xwinner',
-          createdAt: Date.now() - 2000000,
-        },
-        {
-          poolId: '2',
-          tokenAddress: '0x0000000000000000000000000000000000000002',
-          entryAmount: '2000000000000000000',
-          decimals: 18,
-          players: [],
-          winner: '',
-          createdAt: Date.now() - 3000000,
-        },
-      ]);
+    const loadPools = async () => {
+      try {
+        const fetchedPools = await getAllPools();
+        setPools(fetchedPools.slice(0, 3)); // Only top 3 pools
+      } catch (err) {
+        setPools([]);
+      }
       setLoading(false);
-    }, 800);
-
-    // Uncomment this and remove the above to use real fetch:
-    /*
-    getAllPools().then((fetchedPools) => {
-      setPools(fetchedPools.slice(0, 3));
-      setLoading(false);
-    });
-    */
+    };
+    loadPools();
   }, []);
 
   return (
