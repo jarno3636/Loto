@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import QRCode from 'qrcode.react';
+import QRCode from "react-qr-code";
 
 export default function ShareModal({ url, onClose }: { url: string; onClose: () => void }) {
   const modalRef = useRef<HTMLDivElement>(null);
