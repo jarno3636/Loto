@@ -1,19 +1,15 @@
 // frontend/components/FadeWrapper.tsx
 'use client';
+import { motion } from 'framer-motion';
 
-import { useEffect, useState } from 'react';
-
-export default function FadeWrapper({ children }: { children: React.ReactNode }) {
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setShow(true), 10);
-    return () => clearTimeout(timeout);
-  }, []);
-
+export default function FadeWrapper({ children }) {
   return (
-    <div className={show ? 'fade-enter-active' : 'fade-enter'}>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       {children}
-    </div>
+    </motion.div>
   );
 }
