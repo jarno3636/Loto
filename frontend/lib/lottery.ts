@@ -1,15 +1,14 @@
-// frontend/lib/lottery.ts
-import { Contract, JsonRpcProvider } from 'ethers';
+import { Contract, JsonRpcProvider, JsonRpcSigner } from 'ethers';
 import LotteryABI from './LotteryABI.json';
 
 export const LOTTERY_CONTRACT_ADDRESS = '0x828A55DBfdbC97519aebb8F49aeAdF3084eB6dEa';
 const BASE_RPC_URL = 'https://mainnet.base.org';
 
-export function getLotteryContract(provider: JsonRpcProvider) {
-  return new Contract(LOTTERY_CONTRACT_ADDRESS, LotteryABI, provider);
+// Accepts provider or signer for reads/writes
+export function getLotteryContract(providerOrSigner: JsonRpcProvider | JsonRpcSigner) {
+  return new Contract(LOTTERY_CONTRACT_ADDRESS, LotteryABI, providerOrSigner);
 }
 
-// Supports pagination!
 export async function getAllPools(offset = 0, limit = 10) {
   const provider = new JsonRpcProvider(BASE_RPC_URL);
   const contract = getLotteryContract(provider);
