@@ -1,10 +1,10 @@
-// frontend/app/page.tsx
 'use client';
 
 import { useEffect, useState } from "react";
 import { getAllPools } from '@/lib/lottery';
 import { tokenList } from '@/lib/tokenList';
 import { fetchUsdPrice } from '@/lib/price';
+import PoolCard from '@/components/PoolCard';
 
 const PAGE_SIZE = 10;
 
@@ -15,7 +15,6 @@ export default function PoolsPage() {
   const [prices, setPrices] = useState<{ [address: string]: number }>({});
   const [loading, setLoading] = useState(true);
 
-  // Fetch pools when page changes
   useEffect(() => {
     setLoading(true);
     const fetchPools = async () => {
@@ -57,37 +56,9 @@ export default function PoolsPage() {
       ) : (
         <>
           <div className="space-y-4">
-            {pools.map((pool) => {
-              const tokenInfo = tokenList.find(
-                (t) => t.address.toLowerCase() === pool.token.toLowerCase()
-              );
-              const decimals = tokenInfo?.decimals || 18;
-              const symbol = tokenInfo?.symbol || '???';
-              const logo = tokenInfo?.logoURI;
-              const amount = Number(pool.entryAmount) / 10 ** decimals;
-              const usd = prices[pool.token]
-                ? (amount * prices[pool.token]).toFixed(2)
-                : '--';
-
-              return (
-                <div key={pool.id} className="bg-slate-900 rounded p-4 flex items-center gap-4 shadow">
-                  {logo && <img src={logo} alt={symbol} className="w-10 h-10" />}
-                  <div className="flex-1">
-                    <div className="font-bold text-lg">{symbol} Pool #{pool.id}</div>
-                    <div className="text-gray-300 text-sm">
-                      Creator: <span className="font-mono">{pool.creator.slice(0, 8)}...</span>
-                    </div>
-                    <div className="text-sm">
-                      Entry: <b>{amount} {symbol}</b> &nbsp;|&nbsp; <b>${usd} USD</b>
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      Players: {pool.players.length} | Created At: {new Date(Number(pool.createdAt) * 1000).toLocaleString()}
-                    </div>
-                    {pool.winner && <div className="text-green-400 text-xs mt-1">Winner: {pool.winner}</div>}
-                  </div>
-                </div>
-              );
-            })}
+            {pools.map((pool) => (
+              <PoolCard key={pool.id} {...pool} />
+            ))}
           </div>
           {/* Pagination */}
           <div className="flex justify-center items-center mt-8 gap-4">
