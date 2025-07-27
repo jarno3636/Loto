@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { getLotteryContract } from '../lib/lottery';
 import { useAccount, useWalletClient } from 'wagmi';
-import { ethers } from 'ethers';
+import { BrowserProvider } from 'ethers';
 
 interface Props {
   isOpen: boolean;
@@ -24,18 +24,25 @@ export default function JoinPoolModal({ isOpen, onClose, poolId }: Props) {
     setError(null);
     setSuccess(null);
     try {
-      if (!walletClient || !isConnected || !address) {
+      if (!isConnected || !address) {
         setError('Please connect your wallet.');
         setLoading(false);
         return;
       }
 
-      // ethers v6+ signer from wagmi walletClient
-      const signer = new ethers.JsonRpcSigner(walletClient.transport, address);
+      // Use BrowserProvider and window.ethereum for signer (ethers v6 + wagmi v1)
+      const ethereum = typeof window !== 'undefined' ? (window as any).ethereum : null;
+      if (!ethereum) {
+        setError('Ethereum provider not found.');
+        setLoading(false);
+        return;
+      }
+      const browserProvider = new BrowserProvider(ethereum);
+      const signer = await browserProvider.getSigner(address);
 
       const contract = getLotteryContract(signer);
 
-      // You may want to change gas limit or pass entry fee here!
+      // Join pool (add gas override if needed)
       const tx = await contract.joinPool(poolId);
       await tx.wait();
 
