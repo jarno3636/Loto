@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Dialog } from '@headlessui/react';
-import { getLotteryContract } from '../utils/lottery';
+import { getLotteryContract } from '../lib/lottery';
 import { useAccount, useSigner } from 'wagmi';
 
 interface Props {
