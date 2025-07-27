@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { getLotteryContract } from '../lib/lottery';
-import { useAccount, useSigner } from 'wagmi';
+import { useAccount, useWalletClient } from 'wagmi';
 
 interface Props {
   isOpen: boolean;
