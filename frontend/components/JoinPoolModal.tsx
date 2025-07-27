@@ -4,56 +4,70 @@ import { useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { getLotteryContract } from '../lib/lottery';
 import { useAccount, useWalletClient } from 'wagmi';
+import { ethers } from 'ethers';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  poolId: number;
+  poolId: number | string;
 }
 
 export default function JoinPoolModal({ isOpen, onClose, poolId }: Props) {
-  const { address } = useAccount();
-  const { data: signer } = useSigner();
+  const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  async function handleJoin() {
+  const joinPool = async () => {
     setLoading(true);
-    setError('');
-
+    setError(null);
+    setSuccess(null);
     try {
-      const contract = getLotteryContract(signer!);
-      const tx = await contract.enterPool(poolId);
+      if (!walletClient || !isConnected || !address) {
+        setError('Please connect your wallet.');
+        setLoading(false);
+        return;
+      }
+
+      // ethers v6+ signer from wagmi walletClient
+      const signer = new ethers.JsonRpcSigner(walletClient.transport, address);
+
+      const contract = getLotteryContract(signer);
+
+      // You may want to change gas limit or pass entry fee here!
+      const tx = await contract.joinPool(poolId);
       await tx.wait();
-      onClose();
+
+      setSuccess('Successfully joined the pool!');
     } catch (err: any) {
-      setError(err.message || 'Failed to join pool');
+      setError(err.message || 'Transaction failed');
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <Dialog open={isOpen} onClose={onClose} className="fixed z-50 inset-0 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen bg-black bg-opacity-50 p-4">
-        <Dialog.Panel className="bg-slate-900 text-white p-6 rounded-lg w-full max-w-md">
-          <Dialog.Title className="text-lg font-bold mb-4">Join Pool #{poolId}</Dialog.Title>
-
-          {error && <div className="text-red-400 mb-3">{error}</div>}
-
+    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+      <div className="fixed inset-0 bg-black/60" aria-hidden="true" />
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <Dialog.Panel className="bg-slate-800 rounded-lg p-6 w-full max-w-md text-white">
+          <Dialog.Title className="text-2xl font-bold mb-4">Join Pool #{poolId}</Dialog.Title>
+          {error && <div className="text-red-500 mb-2">{error}</div>}
+          {success && <div className="text-green-500 mb-2">{success}</div>}
           <button
-            onClick={handleJoin}
+            className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
+            onClick={joinPool}
             disabled={loading}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded disabled:opacity-50"
           >
-            {loading ? 'Joining...' : 'Confirm Entry'}
+            {loading ? 'Joining...' : 'Join Pool'}
           </button>
-
           <button
+            className="px-3 py-1 mt-4 bg-slate-700 rounded hover:bg-slate-600 ml-2"
             onClick={onClose}
-            className="mt-3 text-sm text-slate-400 hover:underline w-full text-center"
+            disabled={loading}
           >
-            Cancel
+            Close
           </button>
         </Dialog.Panel>
       </div>
