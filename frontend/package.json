@@ -15,12 +15,14 @@
     "ethers": "^6.7.0",
     "viem": "^1.16.8",
     "framer-motion": "^10.16.4",
-    "react-qr-code": "^2.0.8"
+    "react-qr-code": "^2.0.8",
+    "@headlessui/react": "^1.7.17"
+    
   },
   "devDependencies": {
     "@types/react": "^18.2.37",
     "@types/node": "^20.11.30",
-    "@types/react-dom": "^18.2.18",
-    "@headlessui/react": "^1.7.17"
+    "@types/react-dom": "^18.2.18"
+    
   }
 }
