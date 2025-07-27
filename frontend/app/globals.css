@@ -9,6 +9,7 @@ body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 /* Container fade-in animation */
@@ -16,22 +17,63 @@ body {
   opacity: 0;
   transform: translateY(12px);
 }
-
 .fade-enter-active {
   opacity: 1;
   transform: translateY(0);
   transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
-/* Button style override */
-button {
-  transition: all 0.3s ease;
-  cursor: pointer;
+/* Glass card polish */
+.glass-card {
+  background: rgba(24, 33, 59, 0.8); /* subtle dark glass */
+  box-shadow: 0 4px 48px 0 rgba(68, 97, 242, 0.08), 0 1.5px 12px 0 rgba(80, 36, 205, 0.13);
+  border-radius: 1.25rem;
+  backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(125, 211, 252, 0.10);
+  transition: box-shadow 0.25s, border 0.25s;
+}
+.glass-card:hover {
+  box-shadow: 0 8px 64px 0 rgba(80, 36, 205, 0.18);
+  border-color: #6366f1;
 }
 
-/* Smooth hover */
+/* Hide scrollbars for horizontal scrolling sections */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Token logo polish */
+.token-logo {
+  background: #1e293b; /* slate-800 */
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #334155; /* subtle border */
+  box-shadow: 0 2px 8px 0 rgba(80, 36, 205, 0.07);
+}
+
+/* Button style override */
+button {
+  transition: all 0.3s cubic-bezier(.4,0,.2,1);
+  cursor: pointer;
+  outline: none;
+  border: none;
+  font-family: inherit;
+}
+button:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 1px;
+}
 button:hover {
-  opacity: 0.9;
+  opacity: 0.94;
+  filter: brightness(1.04);
+}
+
+input, select {
+  outline: none;
+  font-family: inherit;
+  transition: border 0.2s;
+}
+input:focus, select:focus {
+  border-color: #7c3aed; /* violet-600 */
 }
 
 /* Optional: link underline animation */
@@ -52,7 +94,28 @@ a::after {
   bottom: -2px;
   left: 0;
 }
-
 a:hover::after {
   width: 100%;
+}
+
+/* Modal polish (if using modals) */
+.modal-bg {
+  background: rgba(10, 18, 38, 0.60);
+  backdrop-filter: blur(6px);
+}
+
+::-webkit-input-placeholder { color: #94a3b8; }
+::-moz-placeholder { color: #94a3b8; }
+:-ms-input-placeholder { color: #94a3b8; }
+::placeholder { color: #94a3b8; }
+
+/* Utility for card glow animation */
+@keyframes card-glow {
+  0% { box-shadow: 0 0 0 0 rgba(80, 36, 205, 0.17);}
+  70% { box-shadow: 0 0 32px 4px rgba(80, 36, 205, 0.19);}
+  100% { box-shadow: 0 0 0 0 rgba(80, 36, 205, 0.17);}
+}
+
+.animated-glow:hover {
+  animation: card-glow 1.4s ease-in-out infinite;
 }
