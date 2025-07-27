@@ -3,13 +3,13 @@ import { Contract, JsonRpcProvider } from 'ethers';
 import LotteryABI from './LotteryABI.json';
 
 export const LOTTERY_CONTRACT_ADDRESS = '0x828A55DBfdbC97519aebb8F49aeAdF3084eB6dEa';
+const BASE_RPC_URL = 'https://mainnet.base.org';
 
-export function getLotteryContract(provider: any) {
+export function getLotteryContract(provider: JsonRpcProvider) {
   return new Contract(LOTTERY_CONTRACT_ADDRESS, LotteryABI, provider);
 }
 
-const BASE_RPC_URL = 'https://mainnet.base.org';
-
+// Supports pagination!
 export async function getAllPools(offset = 0, limit = 10) {
   const provider = new JsonRpcProvider(BASE_RPC_URL);
   const contract = getLotteryContract(provider);
@@ -20,14 +20,15 @@ export async function getAllPools(offset = 0, limit = 10) {
   for (let i = offset; i < Math.min(poolCount, offset + limit); i++) {
     const pool = await contract.pools(i);
     pools.push({
-      poolId: String(i),
-      tokenAddress: pool.token,
-      entryAmount: pool.entryAmount.toString(),
-      decimals: 18, // Adjust if needed!
+      id: i,
+      creator: pool.creator,
+      token: pool.token,
+      entryAmount: pool.entryAmount,
+      createdAt: pool.createdAt,
       players: pool.players,
       winner: pool.winner,
-      createdAt: Number(pool.createdAt) * 1000,
     });
   }
-  return { pools, poolCount }; // <--- This is the key!
+
+  return { pools, poolCount };
 }
