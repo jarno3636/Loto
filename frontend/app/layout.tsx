@@ -1,10 +1,8 @@
-// frontend/app/layout.tsx
 import './globals.css';
-import { Metadata } from 'next';
 import Footer from '@/components/Footer';
-import ClientLayout from '@/components/ClientLayout';
+import Header from '@/components/Header';
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Loto | Decentralized Lottery on Base',
   description: 'Join, create, and win from decentralized lottery pools. Powered by Base.',
   metadataBase: new URL('https://loto-gamma.vercel.app'),
@@ -32,19 +30,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
-        <meta name="fc:frame" content="vNext" />
-        <meta name="fc:frame:image" content="https://loto-gamma.vercel.app/meta-preview.png" />
-        <meta name="fc:frame:post_url" content="https://loto-gamma.vercel.app/api/frame" />
-      </head>
       <body className="bg-slate-950 text-white font-sans min-h-screen flex flex-col">
-        <ClientLayout>
-          <main className="flex-grow">{children}</main>
-          <Footer />
-        </ClientLayout>
+        <Header />
+        <main className="flex-grow pt-20">{children}</main>
+        <Footer />
       </body>
     </html>
   );
