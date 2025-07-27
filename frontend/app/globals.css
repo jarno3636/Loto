@@ -119,3 +119,11 @@ a:hover::after {
 .animated-glow:hover {
   animation: card-glow 1.4s ease-in-out infinite;
 }
+.glass-card-blur {
+  background: rgba(22, 36, 54, 0.6);
+  backdrop-filter: blur(16px) saturate(150%);
+  box-shadow: 0 4px 32px 0 #7c3aed33;
+}
+@media (max-width: 600px) {
+  .glass-card-blur { padding: 1rem !important; }
+}
