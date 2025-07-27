@@ -1,24 +1,17 @@
 'use client';
 
-import PoolCard, { PoolCardProps } from './PoolCard';
+import PoolCard from './PoolCard';
 import { useEffect, useState } from 'react';
-import { getAllPools } from '@/lib/lottery';
 
 export default function HomePools() {
-  const [pools, setPools] = useState<PoolCardProps[]>([]);
+  const [poolIds, setPoolIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadPools = async () => {
-      try {
-        const fetchedPools = await getAllPools();
-        setPools(fetchedPools.slice(0, 3)); // Only top 3 pools
-      } catch (err) {
-        setPools([]);
-      }
+    setTimeout(() => {
+      setPoolIds([0, 1, 2]);
       setLoading(false);
-    };
-    loadPools();
+    }, 800);
   }, []);
 
   return (
@@ -27,14 +20,11 @@ export default function HomePools() {
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {loading ? (
           [...Array(3)].map((_, i) => (
-            <div
-              key={i}
-              className="bg-slate-800 h-48 rounded-lg animate-pulse"
-            ></div>
+            <div key={i} className="bg-slate-800 h-48 rounded-lg animate-pulse" />
           ))
         ) : (
-          pools.map((pool) => (
-            <PoolCard key={pool.poolId} {...pool} />
+          poolIds.map((id) => (
+            <PoolCard key={id} poolId={id.toString()} />
           ))
         )}
       </div>
