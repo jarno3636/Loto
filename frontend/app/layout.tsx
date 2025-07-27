@@ -1,10 +1,8 @@
-'use client';
-
+// frontend/app/layout.tsx
 import './globals.css';
 import { Metadata } from 'next';
 import Footer from '@/components/Footer';
-import { WagmiConfig } from 'wagmi';
-import { wagmiConfig } from '@/lib/wagmi';
+import ClientLayout from '@/components/ClientLayout';
 
 export const metadata: Metadata = {
   title: 'Loto | Decentralized Lottery on Base',
@@ -43,10 +41,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="fc:frame:post_url" content="https://loto-gamma.vercel.app/api/frame" />
       </head>
       <body className="bg-slate-950 text-white font-sans min-h-screen flex flex-col">
-        <WagmiConfig config={wagmiConfig}>
+        <ClientLayout>
           <main className="flex-grow">{children}</main>
           <Footer />
-        </WagmiConfig>
+        </ClientLayout>
       </body>
     </html>
   );
