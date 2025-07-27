@@ -16,6 +16,7 @@ export default function PoolsPage() {
   const [page, setPage] = useState(1);
   const [prices, setPrices] = useState<{ [address: string]: number }>({});
   const [loading, setLoading] = useState(true);
+  const [recentWinners, setRecentWinners] = useState<any[]>([]); // NEW
 
   useEffect(() => {
     setLoading(true);
@@ -41,6 +42,13 @@ export default function PoolsPage() {
       }
       setPrices(newPrices);
       setLoading(false);
+
+      // NEW: Find most recent winner(s)
+      const winnerPools = pools
+        .filter(pool => pool.winner)
+        .sort((a, b) => Number(b.createdAt) - Number(a.createdAt))
+        .slice(0, 1); // Use .slice(0, 3) for top 3
+      setRecentWinners(winnerPools);
     };
     fetchPools();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -50,7 +58,8 @@ export default function PoolsPage() {
 
   return (
     <main className="max-w-3xl mx-auto p-4 sm:p-6 text-white relative pb-24">
-      {/* Hero section */}
+
+      {/* HERO SECTION */}
       <section className="flex flex-col items-center text-center mb-10 mt-6">
         <motion.div
           className="relative"
@@ -114,7 +123,46 @@ export default function PoolsPage() {
         </div>
       </section>
 
-      {/* Pools List Area */}
+      {/* ====== RECENT WINNER TICKET ====== */}
+      {recentWinners.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ type: "spring", duration: 0.7, bounce: 0.25 }}
+          className="flex justify-center mb-8"
+        >
+          <div className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-gradient-to-r from-blue-900/60 via-violet-900/40 to-blue-900/60 border border-blue-500/40 glass-card shadow-lg backdrop-blur-lg relative max-w-xl w-full">
+            <img
+              src={
+                tokenList.find(
+                  t => t.address.toLowerCase() === recentWinners[0].token.toLowerCase()
+                )?.logoURI || '/token-placeholder.png'
+              }
+              alt={recentWinners[0].token}
+              className="w-12 h-12 rounded-full border-2 border-white shadow mr-3"
+            />
+            <div className="flex-1">
+              <div className="text-xs uppercase text-slate-400 mb-1 font-semibold tracking-wide">Recent Winner</div>
+              <div className="text-lg font-bold text-white flex items-center gap-2">
+                {recentWinners[0].winner.slice(0, 6)}...{recentWinners[0].winner.slice(-4)}
+                <span className="text-slate-400 font-normal text-sm">
+                  won
+                </span>
+                <span className="text-blue-300 font-extrabold">
+                  {Number(recentWinners[0].entryAmount) / 10 ** (tokenList.find(t => t.address.toLowerCase() === recentWinners[0].token.toLowerCase())?.decimals || 18)}{" "}
+                  {tokenList.find(t => t.address.toLowerCase() === recentWinners[0].token.toLowerCase())?.symbol || "?"}
+                </span>
+              </div>
+              <div className="text-xs text-slate-400">
+                Pool #{recentWinners[0].id} &middot; {new Date(Number(recentWinners[0].createdAt) * 1000).toLocaleDateString()}
+              </div>
+            </div>
+            <span className="absolute right-2 top-2 px-2 py-1 text-xs rounded bg-blue-600/70 text-white font-bold shadow">WINNER</span>
+          </div>
+        </motion.div>
+      )}
+
+      {/* POOLS LIST */}
       <section>
         <h2 className="text-2xl font-bold mb-5">Live Lottery Pools</h2>
         <AnimatePresence mode="wait">
@@ -193,7 +241,7 @@ export default function PoolsPage() {
         </AnimatePresence>
       </section>
 
-      {/* Mobile Create Pool Floating Button */}
+      {/* MOBILE CREATE POOL BUTTON */}
       <div className="fixed bottom-4 left-0 w-full flex justify-center sm:hidden z-50">
         <Link href="/create" className="bg-gradient-to-r from-blue-600 to-violet-600 px-8 py-4 rounded-full font-bold text-xl shadow-2xl hover:from-blue-500 hover:to-violet-500 transition-all flex items-center gap-2">
           <span role="img" aria-label="Sparkles">✨</span> Create Pool
